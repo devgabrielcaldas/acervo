@@ -1,0 +1,72 @@
+:root {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  color-scheme: dark;
+
+  --font-editorial: "Iowan Old Style", "Baskerville", "Palatino Linotype", Georgia, serif;
+  --bg: #0d0f11;
+  --sidebar: #101214;
+  --surface: #171a1d;
+  --surface-soft: #1e2225;
+  --surface-hover: #252a2e;
+  --text: #f5f2ed;
+  --text-muted: #a2a4a6;
+  --text-subtle: #757b7d;
+  --border: #2a2d30;
+  --accent: #d5ad79;
+  --accent-strong: #e4bc88;
+  --accent-on: #282017;
+  --accent-soft: rgba(213, 173, 121, 0.11);
+  --shadow: 0 24px 65px rgba(0, 0, 0, 0.16);
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+  --bg: #f5f3ee;
+  --sidebar: #eeece6;
+  --surface: #fffefa;
+  --surface-soft: #f4f0e8;
+  --surface-hover: #eae4da;
+  --text: #262522;
+  --text-muted: #65645f;
+  --text-subtle: #858179;
+  --border: #e2dcd2;
+  --accent: #93663c;
+  --accent-strong: #784e2a;
+  --accent-on: #fffefa;
+  --accent-soft: rgba(147, 102, 60, 0.1);
+  --shadow: 0 20px 55px rgba(50, 36, 18, 0.07);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { min-width: 320px; }
+body { min-width: 320px; margin: 0; background: var(--bg); color: var(--text); }
+button, input, select, textarea { font: inherit; }
+button { cursor: pointer; }
+a { color: inherit; text-decoration: none; }
+svg { flex-shrink: 0; }
+::selection { background: var(--accent); color: var(--accent-on); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+#root { min-height: 100vh; }
+
+.skip-link {
+  position: fixed;
+  z-index: 100;
+  top: -70px;
+  left: 16px;
+  padding: 12px 18px;
+  background: var(--accent);
+  color: var(--accent-on);
+  border-radius: 10px;
+}
+.skip-link:focus { top: 12px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

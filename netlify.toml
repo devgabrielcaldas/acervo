@@ -1,0 +1,4 @@
+# Configuração do Acervo (SPA React + Vite).
+[build]
+  command = "npm run build"
+  publish = "dist"

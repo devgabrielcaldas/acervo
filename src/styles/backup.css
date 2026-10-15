@@ -1,0 +1,49 @@
+/* Etapa 7 — Seguindo os tokens globais do Acervo, inclusive no tema claro. */
+.acervo-backup { margin-top: 22px; }
+.acervo-backup__actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.acervo-backup__action { min-width: 0; padding: 30px; display: flex; align-items: flex-start; flex-direction: column; }
+.acervo-backup__action + .acervo-backup__action { border-left: 1px solid var(--border); }
+.acervo-backup__symbol { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 11px; background: var(--accent-soft); color: var(--accent); margin-bottom: 19px; }
+.acervo-backup__action h3 { margin: 0 0 9px; font-size: 17px; letter-spacing: -.2px; color: var(--text); }
+.acervo-backup__action p { margin: 0 0 23px; font-size: 13px; line-height: 1.7; color: var(--text-muted); max-width: 460px; flex: 1; }
+.acervo-backup__action .btn { white-space: normal; min-height: 43px; }
+.acervo-backup__picker { display: inline-flex; gap: 9px; align-items: center; justify-content: center; padding: 11px 17px; border: 1px solid var(--border); border-radius: 10px; font-size: 12px; font-weight: 700; background: var(--surface-soft); color: var(--text); cursor: pointer; }
+.acervo-backup__picker:hover { border-color: var(--accent); background: var(--surface-hover); }
+.acervo-backup__picker:has(+ input:disabled) { opacity: .5; cursor: not-allowed; pointer-events: none; }
+.acervo-backup__picker:has(+ input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 4px; }
+.acervo-backup__file { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; }
+.acervo-backup__preview { border-top: 1px solid var(--border); padding: 27px 29px 29px; }
+.acervo-backup__preview-title { display: flex; gap: 13px; align-items: flex-start; color: var(--accent); }
+.acervo-backup__preview-title h3 { margin: 0 0 7px; font-size: 17px; color: var(--text); }
+.acervo-backup__preview-title p { font-size: 12px; line-height: 1.6; margin: 0; color: var(--text-muted); overflow-wrap: anywhere; }
+.acervo-backup__preview .storage-counts { padding: 20px 0; }
+.acervo-backup__comparison { display: flex; align-items: center; gap: 22px; background: var(--surface-soft); border-radius: 12px; padding: 17px 22px; }
+.acervo-backup__comparison div { flex: 1; display: flex; flex-direction: column; gap: 7px; }
+.acervo-backup__comparison div span { font-size: 11px; color: var(--text-muted); }
+.acervo-backup__comparison strong { font-size: 19px; color: var(--text); }
+.acervo-backup__comparison > svg { color: var(--accent); }
+.acervo-backup__warning { margin: 20px 0; padding: 16px 18px; border: 1px solid var(--border); border-radius: 12px; display: flex; gap: 12px; color: var(--accent); background: var(--accent-soft); }
+.acervo-backup__warning svg { flex-shrink: 0; }
+.acervo-backup__warning p { font-size: 12px; line-height: 1.7; color: var(--text-muted); margin: 0; }
+.acervo-backup__warning strong { color: var(--text); }
+.acervo-backup__confirm-label { font-size: 13px; line-height: 1.6; display: block; margin-bottom: 9px; }
+.acervo-backup__confirm { display: block; max-width: 320px; width: 100%; min-height: 44px; border: 1px solid var(--border); border-radius: 9px; padding: 10px 13px; color: var(--text); background: var(--surface-soft); outline: none; }
+.acervo-backup__confirm:focus { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+.acervo-backup__confirm-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 21px; }
+.acervo-backup__result { margin-top: 0; }
+.acervo-backup__reload { padding: 0 29px 29px; }
+@media (max-width: 760px) {
+  .acervo-backup__actions { grid-template-columns: minmax(0, 1fr); }
+  .acervo-backup__action { padding: 24px; }
+  .acervo-backup__action + .acervo-backup__action { border-left: 0; border-top: 1px solid var(--border); }
+  .acervo-backup__action p { margin-bottom: 17px; }
+}
+@media (max-width: 520px) {
+  .acervo-backup__preview { padding: 20px; }
+  .acervo-backup__preview .storage-counts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .acervo-backup__comparison { gap: 11px; padding: 14px; }
+  .acervo-backup__comparison strong { font-size: 16px; }
+  .acervo-backup__confirm-actions { flex-direction: column-reverse; }
+  .acervo-backup__confirm-actions .btn { width: 100%; }
+  .acervo-backup__reload { padding: 0 20px 20px; }
+}
