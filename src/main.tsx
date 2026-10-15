@@ -2,6 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router';
 import App from './App';
+import { AuthProvider } from './contexts/AuthContext';
 import { AppErrorBoundary } from './components/common/AppErrorBoundary';
 import './styles/global.css';
 import './styles/layout.css';
@@ -16,7 +17,8 @@ if (!root) throw new Error('Elemento #root não encontrado no index.html.');
 
 createRoot(root).render(
   <StrictMode>
-    <AppErrorBoundary><BrowserRouter><App /></BrowserRouter></AppErrorBoundary>
+    <AppErrorBoundary><AuthProvider><BrowserRouter><App /></BrowserRouter></AuthProvider></AppErrorBoundary>
   </StrictMode>,
 );
 import './styles/backup.css';
+import './styles/login.css';

@@ -1,4 +1,4 @@
-import { getDatabase } from './database';
+import {cloudSaveCover,cloudGetCover,cloudRemoveCover} from './cloudRepository';
 import type { CoverRecord } from '../types/media';
 
 const MAX_UPLOAD_BYTES = 12 * 1024 * 1024;
@@ -53,49 +53,13 @@ async function prepareCover(file: Blob): Promise<Pick<CoverRecord, 'image' | 'mi
 /** Troca a capa mantendo, no máximo, uma imagem por registro. */
 export async function saveCover(mediaId: string, file: Blob): Promise<CoverRecord> {
   const prepared = await prepareCover(file);
-  const db = await getDatabase();
-  const tx = db.transaction(['media', 'covers'], 'readwrite');
-  const items = tx.objectStore('media');
-  const covers = tx.objectStore('covers');
-  const item = await items.get(mediaId);
-  if (!item) {
-    await tx.done;
-    throw new Error('Cadastre o item antes de adicionar uma capa.');
-  }
-
-  const previous = await covers.index('by-media-id').get(mediaId);
-  if (previous) await covers.delete(previous.id);
-
-  const cover: CoverRecord = {
-    id: crypto.randomUUID(),
-    mediaId,
-    ...prepared,
-    savedAt: new Date().toISOString(),
-  };
-  await covers.put(cover);
-  await items.put({ ...item, coverId: cover.id, updatedAt: new Date().toISOString() });
-  await tx.done;
-  return cover;
+  return cloudSaveCover(mediaId,prepared);
 }
 
 export async function getCoverBlob(mediaId: string): Promise<Blob | undefined> {
-  const db = await getDatabase();
-  const cover = await db.getFromIndex('covers', 'by-media-id', mediaId);
-  return cover?.image;
+  return cloudGetCover(mediaId);
 }
 
 export async function removeCover(mediaId: string): Promise<void> {
-  const db = await getDatabase();
-  const tx = db.transaction(['media', 'covers'], 'readwrite');
-  const items = tx.objectStore('media');
-  const covers = tx.objectStore('covers');
-  const item = await items.get(mediaId);
-  const cover = await covers.index('by-media-id').get(mediaId);
-  if (cover) await covers.delete(cover.id);
-  if (item) {
-    const updated = { ...item };
-    delete updated.coverId;
-    await items.put({ ...updated, updatedAt: new Date().toISOString() });
-  }
-  await tx.done;
+  return cloudRemoveCover(mediaId);
 }

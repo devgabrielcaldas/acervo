@@ -1,4 +1,4 @@
-import { getDatabase } from './database';
+import { cloudSaveMedia,cloudGetMedia,cloudListMedia,cloudDeleteMedia } from './cloudRepository';
 import type {
   BookInput,
   DateOnly,
@@ -119,30 +119,21 @@ function normalize(input: MediaInput, id: string, createdAt: string, coverId?: s
 
 /** Cria um registro. Campos opcionais podem ficar em branco. */
 export async function addMedia(input: MediaInput): Promise<MediaRecord> {
-  const db = await getDatabase();
   const id = crypto.randomUUID();
   const record = normalize(input, id, new Date().toISOString());
-  await db.add('media', record);
-  return record;
+  return cloudSaveMedia(record);
 }
 
 export async function getMedia(id: string): Promise<MediaRecord | undefined> {
-  const db = await getDatabase();
-  return db.get('media', id);
+  return cloudGetMedia(id);
 }
 
 /** Filtra registros existentes sem criar cópias das listas de desejos/favoritos. */
 export async function listMedia(filters: MediaFilters = {}): Promise<MediaRecord[]> {
-  const db = await getDatabase();
-  const records = filters.kind && filters.status
-    ? await db.getAllFromIndex('media', 'by-kind-status', [filters.kind, filters.status])
-    : filters.kind
-      ? await db.getAllFromIndex('media', 'by-kind', filters.kind)
-      : filters.status
-        ? await db.getAllFromIndex('media', 'by-status', filters.status)
-        : await db.getAll('media');
-
+  const records = await cloudListMedia();
   return records.filter((item) => {
+    if (filters.kind && item.kind !== filters.kind) return false;
+    if (filters.status && item.status !== filters.status) return false;
     if (filters.favoritesOnly && !item.favorite) return false;
     if (filters.completedDay && item.completedOn !== filters.completedDay) return false;
     if (filters.completedYear !== undefined && !item.completedOn?.startsWith(`${filters.completedYear}-`)) return false;
@@ -155,29 +146,14 @@ export async function listMedia(filters: MediaFilters = {}): Promise<MediaRecord
 /** Substitui os dados editáveis preservando ID, timestamps de criação e capa. */
 export async function updateMedia(id: string, input: MediaInput): Promise<MediaRecord> {
   validateInput(input);
-  const db = await getDatabase();
-  const tx = db.transaction('media', 'readwrite');
-  const current = await tx.store.get(id);
-  if (!current) {
-    await tx.done;
-    throw new Error('Registro não encontrado.');
-  }
-  if (current.kind !== input.kind) {
-    await tx.done;
-    throw new Error('A categoria não pode ser alterada durante a edição.');
-  }
-  const updated = normalize(input, current.id, current.createdAt, current.coverId);
-  await tx.store.put(updated);
-  await tx.done;
-  return updated;
+  const current = await cloudGetMedia(id);
+  if (!current) throw new Error('Registro não encontrado.');
+  if (current.kind !== input.kind) throw new Error('A categoria não pode ser alterada durante a edição.');
+  const updated = normalize(input,current.id,current.createdAt,current.coverId);
+  return cloudSaveMedia(updated);
 }
 
 /** Remove o item e a imagem associada na mesma transação. */
 export async function deleteMedia(id: string): Promise<void> {
-  const db = await getDatabase();
-  const tx = db.transaction(['media', 'covers'], 'readwrite');
-  const item = await tx.objectStore('media').get(id);
-  if (item?.coverId) await tx.objectStore('covers').delete(item.coverId);
-  await tx.objectStore('media').delete(id);
-  await tx.done;
+  await cloudDeleteMedia(id);
 }

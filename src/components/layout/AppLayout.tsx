@@ -2,10 +2,11 @@ import { useEffect, useRef, useState } from 'react';
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
 import {
   Bookmark, BookOpen, ChevronRight, Heart, History, LayoutDashboard,
-  LibraryBig, Menu, Moon, Plus, Settings2, Sparkles, Sun, Target, X,
+  LibraryBig, LogOut, Menu, Moon, Plus, Settings2, Sparkles, Sun, Target, X,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router';
+import { useAuth } from '../../contexts/AuthContext';
 
 type Theme = 'dark' | 'light';
 type NavigationItem = { to: string; label: string; shortLabel: string; icon: LucideIcon };
@@ -29,6 +30,7 @@ function readSavedTheme(): Theme {
 }
 
 export function AppLayout() {
+  const { signOut } = useAuth();
   const [theme, setTheme] = useState<Theme>(readSavedTheme);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
@@ -134,6 +136,7 @@ export function AppLayout() {
           </nav>
         </div>
         <div className="sidebar__footer">
+          <button type="button" className="acervo-signout" onClick={() => { void signOut().catch((error: unknown) => window.alert(error instanceof Error ? error.message : "Erro ao sair.")); }}><LogOut size={17} /> Sair da conta</button>
           <div className="sidebar__message">
             <Sparkles size={18} strokeWidth={1.6} aria-hidden="true" />
             <p>Menos tempo rolando a tela. Mais tempo vivendo histórias.</p>

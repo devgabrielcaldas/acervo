@@ -161,7 +161,7 @@ export function StoragePage() {
       setBackupResult({ kind: 'success', message: 'Backup restaurado com sucesso, incluindo capas e metas. Recarregue o Acervo para atualizar todas as páginas e aplicar o tema salvo.' });
       await refresh();
     } catch (error) {
-      setBackupResult({ kind: 'error', message: `Não foi possível restaurar: ${messageFromError(error)}. A transação foi cancelada.` });
+      setBackupResult({ kind: 'error', message: `Não foi possível restaurar: ${messageFromError(error)}. Os dados existentes são preservados se o commit SQL falhar; confirme o erro antes de tentar de novo.` });
     } finally {
       setRestoring(false);
     }
@@ -175,7 +175,7 @@ export function StoragePage() {
         <div>
           <span className="eyebrow"><span className="eyebrow__line" /> SEU ESPAÇO PESSOAL</span>
           <h1>Configurações</h1>
-          <p>Gerencie seus backups e acompanhe o armazenamento deste navegador.</p>
+          <p>Gerencie seus backups e acompanhe os registros sincronizados na nuvem.</p>
         </div>
       </div>
 
@@ -184,8 +184,8 @@ export function StoragePage() {
           <span className="storage-panel__icon"><Database size={24} strokeWidth={1.6} /></span>
           <div>
             <span className="section-kicker">SEUS DADOS</span>
-            <h2 id="storage-heading">Armazenamento local</h2>
-            <p>IndexedDB · acervo-local · versão 1</p>
+            <h2 id="storage-heading">Armazenamento na nuvem</h2>
+            <p>Supabase · PostgreSQL + Storage privado</p>
           </div>
           <button className="btn btn--outline storage-panel__refresh" type="button" onClick={() => void refresh()} disabled={busy}>
             <RefreshCw size={16} /> Atualizar
@@ -193,7 +193,7 @@ export function StoragePage() {
         </div>
 
         {summary ? <SummaryCards summary={summary} /> : (
-          <p className="storage-panel__empty">{loading ? 'Conectando ao banco local...' : 'Não foi possível carregar a contagem.'}</p>
+          <p className="storage-panel__empty">{loading ? 'Consultando o Supabase...' : 'Não foi possível carregar a contagem.'}</p>
         )}
         <div className="storage-panel__test">
           <div>
@@ -201,7 +201,7 @@ export function StoragePage() {
             <p>Cria, altera, consulta e exclui um registro temporário com capa. Seus títulos existentes não são alterados.</p>
           </div>
           <button className="btn btn--primary" type="button" disabled={busy || !summary} onClick={() => void testDatabase()}>
-            <ShieldCheck size={17} /> {testing ? 'Verificando...' : 'Testar banco local'}
+            <ShieldCheck size={17} /> {testing ? 'Verificando...' : 'Testar banco na nuvem'}
           </button>
         </div>
         {result && (
@@ -299,7 +299,7 @@ export function StoragePage() {
 
       <div className="storage-footnote">
         <HardDrive size={20} />
-        <p><strong>Privacidade e armazenamento:</strong> seus dados continuam neste navegador, sem sincronização automática entre dispositivos. A exportação cria uma cópia portátil, mas não faz backup automático. Exporte novamente após alterações importantes e armazene o JSON em um local seguro.</p>
+        <p><strong>Privacidade e armazenamento:</strong> seus dados ficam na sua conta Supabase, com sincronização entre dispositivos após o login. O backup JSON é uma cópia independente e não é automático. Exporte-o periodicamente e guarde em local seguro.</p>
       </div>
     </div>
   );

@@ -1,4 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router';
+import { useAuth } from './contexts/AuthContext';
+import { LoginPage } from './pages/LoginPage';
 import { AppLayout } from './components/layout/AppLayout';
 import { DashboardPage } from './pages/DashboardPage';
 import { CollectionPage } from './pages/CollectionPage';
@@ -11,6 +13,9 @@ import { StoragePage } from './pages/StoragePage';
 import { WishlistPage } from './pages/WishlistPage';
 
 export default function App() {
+  const { user, loading } = useAuth();
+  if (loading) return <div className="auth-loading" role="status">Abrindo seu Acervo…</div>;
+  if (!user) return <LoginPage />;
   return (
     <Routes>
       <Route element={<AppLayout />}>

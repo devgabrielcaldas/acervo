@@ -1,4 +1,4 @@
-import { getDatabase } from './database';
+import { cloudSnapshot, cloudRestoreSnapshot } from './cloudRepository';
 import type { AnnualGoal, CoverRecord, MediaRecord, StorageSummary } from '../types/media';
 
 /**
@@ -223,14 +223,7 @@ function summarize(records: MediaRecord[], covers: CoverRecord[], goals: AnnualG
 
 /** Faz uma leitura consistente de todas as tabelas numa única transação read-only. */
 export async function createBackupFile(): Promise<{ fileName: string; blob: Blob; summary: StorageSummary }> {
-  const db = await getDatabase();
-  const tx = db.transaction(['media', 'covers', 'goals'], 'readonly');
-  const [media, covers, goals] = await Promise.all([
-    tx.objectStore('media').getAll(),
-    tx.objectStore('covers').getAll(),
-    tx.objectStore('goals').getAll(),
-  ]);
-  await tx.done;
+  const {media,covers,goals} = await cloudSnapshot();
 
   const serializedCovers: SerializableCover[] = [];
   for (const cover of covers) {
@@ -332,23 +325,7 @@ export async function prepareBackup(file: File): Promise<PreparedBackup> {
 
 /** Substituição atômica das três tabelas; um erro aborta toda a transação. */
 export async function restoreBackup(prepared: PreparedBackup): Promise<void> {
-  const db = await getDatabase();
-  const tx = db.transaction(['media', 'covers', 'goals'], 'readwrite');
-  try {
-    await Promise.all([
-      tx.objectStore('media').clear(),
-      tx.objectStore('covers').clear(),
-      tx.objectStore('goals').clear(),
-    ]);
-    for (const record of prepared.records) await tx.objectStore('media').put(record);
-    for (const cover of prepared.covers) await tx.objectStore('covers').put(cover);
-    for (const goal of prepared.goals) await tx.objectStore('goals').put(goal);
-    await tx.done;
-  } catch (error) {
-    try { tx.abort(); } catch { /* A transação já pode ter sido abortada pelo navegador. */ }
-    try { await tx.done; } catch { /* A transação abortada é esperada após a falha. */ }
-    throw error;
-  }
+  await cloudRestoreSnapshot(prepared.records,prepared.covers,prepared.goals);
   // O tema é uma preferência opcional fora do IndexedDB; não deve invalidar a restauração.
   try { window.localStorage.setItem('acervo:theme', prepared.theme); } catch { /* Armazenamento restrito. */ }
 }

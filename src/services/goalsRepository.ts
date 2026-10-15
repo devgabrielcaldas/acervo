@@ -1,4 +1,4 @@
-import { getDatabase } from './database';
+import { cloudSaveGoal,cloudGetGoal,cloudListGoals } from './cloudRepository';
 import type { AnnualGoal } from '../types/media';
 
 export type AnnualGoalInput = Pick<AnnualGoal, 'year' | 'books' | 'movies' | 'series'>;
@@ -10,18 +10,14 @@ export async function saveAnnualGoal(input: AnnualGoalInput): Promise<AnnualGoal
     throw new Error('Informe um ano válido e metas inteiras não negativas.');
   }
   const goal: AnnualGoal = { ...input, updatedAt: new Date().toISOString() };
-  const db = await getDatabase();
-  await db.put('goals', goal);
-  return goal;
+  return cloudSaveGoal(goal);
 }
 
 export async function getAnnualGoal(year: number): Promise<AnnualGoal | undefined> {
-  const db = await getDatabase();
-  return db.get('goals', year);
+  return cloudGetGoal(year);
 }
 
 export async function listAnnualGoals(): Promise<AnnualGoal[]> {
-  const db = await getDatabase();
-  const goals = await db.getAll('goals');
+  const goals = await cloudListGoals();
   return goals.sort((a, b) => b.year - a.year);
 }

@@ -1,19 +1,11 @@
-import { getDatabase } from './database';
+import { cloudSummary } from './cloudRepository';
 import { getCoverBlob, saveCover } from './coverRepository';
 import { addMedia, deleteMedia, getMedia, listMedia, updateMedia } from './mediaRepository';
 import type { StorageSummary } from '../types/media';
 
 /** Retorna contagens reais do banco deste navegador. */
 export async function getStorageSummary(): Promise<StorageSummary> {
-  const db = await getDatabase();
-  const [books, movies, series, covers, goals] = await Promise.all([
-    db.countFromIndex('media', 'by-kind', 'book'),
-    db.countFromIndex('media', 'by-kind', 'movie'),
-    db.countFromIndex('media', 'by-kind', 'series'),
-    db.count('covers'),
-    db.count('goals'),
-  ]);
-  return { books, movies, series, covers, goals };
+  return cloudSummary();
 }
 
 /** Testa cadastro, consulta, edição, busca e imagem; remove tudo ao final. */
