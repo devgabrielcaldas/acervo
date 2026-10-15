@@ -231,10 +231,10 @@ export function MediaFormPage() {
             <div className="media-fields-grid">
               <label className="media-field"><span>Data de início</span>
                 <input type="date" value={values.startedOn} onChange={(event) => change('startedOn', event.target.value)} /></label>
-              {values.status === 'completed' && <label className="media-field"><span>Data de conclusão <b>*</b></span>
-                <input type="date" required value={values.completedOn} min={values.startedOn || undefined}
+              {values.status === 'completed' && <label className="media-field"><span>Data de conclusão (opcional)</span>
+                <input type="date" value={values.completedOn} min={values.startedOn || undefined}
                   onChange={(event) => change('completedOn', event.target.value)} />
-                <small>Use o dia em que realmente terminou. Não será preenchido automaticamente.</small></label>}
+                <small>Se não souber o dia exato, deixe em branco. O histórico e as metas só considerarão títulos com uma data real.</small></label>}
               <label className="media-field"><span>Sua nota</span>
                 <select value={values.rating} onChange={(event) => change('rating', event.target.value)}>
                   <option value="">Sem avaliação</option>

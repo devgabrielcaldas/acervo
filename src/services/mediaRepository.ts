@@ -50,10 +50,8 @@ function validateInput(input: MediaInput): void {
   const start = checkedDate(input.startedOn);
   const end = checkedDate(input.completedOn);
   if (start && end && start > end) throw new Error('A conclusão não pode anteceder o início.');
-  // Quando o status for concluído, a data deve ser informada no formulário.
-  if (input.status === 'completed' && !end) {
-    throw new Error('Informe a data real de conclusão antes de marcar como concluído.');
-  }
+  // A data de conclusão é opcional para leituras antigas sem dia conhecido.
+  // Estatísticas e histórico continuam usando somente datas reais informadas.
   if (input.kind === 'book') {
     checkedInteger(input.totalPages, 'Total de páginas', 1);
     checkedInteger(input.currentPage, 'Página atual');

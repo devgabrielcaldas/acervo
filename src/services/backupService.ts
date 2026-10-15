@@ -107,9 +107,8 @@ function validateMedia(value: unknown, index: number): asserts value is MediaRec
       !Number.isInteger(value.rating * 2))) {
     fail(`${tag} possui uma avaliação inválida.`);
   }
-  if (value.status === 'completed' && !validDate(value.completedOn)) {
-    fail(`${tag} está concluído, mas não tem data válida de conclusão.`);
-  }
+  // Registros concluídos sem data exata são válidos em backups.
+  // Se a data estiver presente, ela já foi validada acima por optionalDate.
   if (typeof value.startedOn === 'string' && typeof value.completedOn === 'string' && value.startedOn > value.completedOn) {
     fail(`${tag} possui data de conclusão anterior à de início.`);
   }
