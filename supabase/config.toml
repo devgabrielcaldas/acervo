@@ -1,0 +1,4 @@
+# A Edge Function valida o token do usuário dentro do handler via Supabase Auth.
+# Necessário para projetos que usam sb_publishable_* (não-JWT).
+[functions.catalog]
+verify_jwt = false

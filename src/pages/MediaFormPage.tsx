@@ -4,6 +4,9 @@ import { ArrowLeft, BookOpen, Check, Film, ImagePlus, Save, Trash2, Tv } from 'l
 import { Link, useNavigate, useParams } from 'react-router';
 import { MediaCover } from '../components/media/MediaCover';
 import { RatingStars } from '../components/media/RatingStars';
+import { CatalogSearch } from '../components/media/CatalogSearch';
+import { downloadCatalogCover } from '../services/catalogClient';
+import type { CatalogItem } from '../services/catalogClient';
 import { addMedia, getMedia, updateMedia } from '../services/mediaRepository';
 import { removeCover, saveCover } from '../services/coverRepository';
 import type { BookFormat, DateOnly, MediaCategory, MediaInput, MediaRecord, MediaStatus, WishPriority } from '../types/media';
@@ -99,6 +102,11 @@ export function MediaFormPage() {
   const file = coverSelection?.file;
   const previewUrl = coverSelection?.url;
   const [removeExistingCover, setRemoveExistingCover] = useState(false);
+  const [catalogActive, setCatalogActive] = useState(false);
+  const [catalogHint, setCatalogHint] = useState('');
+  const [catalogCoverUrl, setCatalogCoverUrl] = useState<string>();
+  const [catalogCoverFallbackUrl, setCatalogCoverFallbackUrl] = useState<string>();
+  const [fetchingCover, setFetchingCover] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -132,8 +140,47 @@ export function MediaFormPage() {
       setError('A imagem deve ter no máximo 12 MB.'); return;
     }
     setCoverSelection({ file: next, url: URL.createObjectURL(next) });
+    setCatalogCoverUrl(undefined);
+    setCatalogCoverFallbackUrl(undefined);
     setRemoveExistingCover(false);
     setError('');
+  }
+
+  async function acceptCatalogCover(url: string, confirmReplace = false, fallbackUrl?: string) {
+    if (confirmReplace && (file || (record?.coverId && !removeExistingCover)) &&
+        !window.confirm('Substituir a capa atual pela imagem do catálogo?')) return;
+    setFetchingCover(true);
+    try {
+      const selected = await downloadCatalogCover(url, fallbackUrl);
+      chooseCover(selected);
+      setCatalogHint('Capa do catálogo pronta. Você ainda pode escolher outra imagem.');
+    } catch (reason) {
+      setCatalogHint(`Não foi possível baixar a capa automática: ${getError(reason)}. Você pode escolher uma capa manualmente.`);
+    } finally {
+      setFetchingCover(false);
+    }
+  }
+
+  async function acceptCatalogItem(item: CatalogItem) {
+    setValues(current => ({
+      ...current,
+      title: item.title,
+      releaseYear: item.year ? String(item.year) : current.releaseYear,
+      genres: item.genres.length ? item.genres.join(', ') : current.genres,
+      author: current.kind === 'book' && item.creator ? item.creator : current.author,
+      director: current.kind === 'movie' && item.creator ? item.creator : current.director,
+      totalPages: current.kind === 'book' && item.pages ? String(item.pages) : current.totalPages,
+      durationMinutes: current.kind === 'movie' && item.durationMinutes ? String(item.durationMinutes) : current.durationMinutes,
+      totalSeasons: current.kind === 'series' && item.totalSeasons ? String(item.totalSeasons) : current.totalSeasons,
+      totalEpisodes: current.kind === 'series' && item.totalEpisodes ? String(item.totalEpisodes) : current.totalEpisodes,
+    }));
+    setCatalogActive(false);
+    setCatalogCoverUrl(item.coverUrl);
+    setCatalogCoverFallbackUrl(item.coverFallbackUrl);
+    setCatalogHint(`Informações preenchidas a partir de ${item.source === 'tmdb' ? 'TMDB' : item.source === 'google-books' ? 'Google Books' : 'Open Library'}. Confira os dados antes de salvar.`);
+    if (item.coverUrl && !file && !(record?.coverId && !removeExistingCover)) {
+      await acceptCatalogCover(item.coverUrl, false, item.coverFallbackUrl);
+    }
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -184,7 +231,7 @@ export function MediaFormPage() {
             <div className="media-form-section-title"><span>01</span><div><h2>O que vamos guardar?</h2><p>Escolha o tipo e as informações principais.</p></div></div>
             <div className="media-kind-options" role="group" aria-label="Categoria do registro">
               {options.map(({ kind, label, Icon }) => (
-                <button key={kind} type="button" disabled={editing} onClick={() => change('kind', kind)}
+                <button key={kind} type="button" disabled={editing} onClick={() => { change('kind', kind); setCatalogActive(false); setCatalogCoverUrl(undefined); setCatalogCoverFallbackUrl(undefined); setCatalogHint(''); }}
                   className={`media-kind ${values.kind === kind ? 'media-kind--active' : ''}`} aria-pressed={values.kind === kind}>
                   <Icon size={20} /> {label}
                 </button>
@@ -194,7 +241,12 @@ export function MediaFormPage() {
             <div className="media-fields-grid">
               <label className="media-field media-field--wide"><span>Título <b>*</b></span>
                 <input autoFocus required maxLength={200} value={values.title} placeholder="Ex.: O Massacre da Família Hope"
-                  onChange={(event) => change('title', event.target.value)} /></label>
+                  onChange={(event) => { change('title', event.target.value); setCatalogActive(true); setCatalogCoverUrl(undefined); setCatalogCoverFallbackUrl(undefined); setCatalogHint(''); }} /></label>
+              {catalogActive && values.title.trim().length >= 3 && (
+                <div className="media-field media-field--wide">
+                  <CatalogSearch kind={values.kind} query={values.title} enabled={catalogActive} onSelect={acceptCatalogItem} />
+                </div>
+              )}
               <label className="media-field"><span>Status <b>*</b></span>
                 <select value={values.status} onChange={(event) => changeStatus(event.target.value as MediaStatus)}>
                   <option value="wishlist">{values.kind === 'book' ? 'Quero ler' : 'Quero assistir'}</option>
@@ -284,12 +336,14 @@ export function MediaFormPage() {
             {(file || (record?.coverId && !removeExistingCover)) && <button type="button" className="media-remove-cover" onClick={() => { setCoverSelection(null); setRemoveExistingCover(true); }}>
               <Trash2 size={15} /> Remover capa
             </button>}
-            <p className="media-help">JPG, PNG ou WebP · até 12 MB. A imagem será redimensionada e salva neste navegador.</p>
+            {catalogHint && <p className="catalog-cover-notice" role="status">{catalogHint}</p>}
+            {catalogCoverUrl && <button type="button" className="btn btn--outline catalog-use-cover" disabled={fetchingCover} onClick={() => void acceptCatalogCover(catalogCoverUrl, true, catalogCoverFallbackUrl)}>{fetchingCover ? 'Baixando capa...' : 'Usar capa do catálogo'}</button>}
+            <p className="media-help">JPG, PNG ou WebP · até 12 MB. A capa será otimizada e salva na nuvem.</p>
           </section>
           <div className="media-save-panel">
             {error && <div className="media-alert media-alert--error" role="alert">{error}</div>}
-            <button className="btn btn--primary media-save-button" type="submit" disabled={saving}>
-              {saving ? 'Salvando...' : <><Save size={17} /> {editing ? 'Salvar alterações' : 'Adicionar à coleção'}</>}
+            <button className="btn btn--primary media-save-button" type="submit" disabled={saving || fetchingCover}>
+              {saving ? 'Salvando...' : fetchingCover ? 'Preparando capa...' : <><Save size={17} /> {editing ? 'Salvar alterações' : 'Adicionar à coleção'}</>}
             </button>
             <p><Check size={15} /> Você poderá editar tudo depois, sem criar cópias.</p>
           </div>
