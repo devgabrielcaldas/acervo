@@ -38,3 +38,6 @@ acervo-backup*.json
 # Arquivos temporarios
 *.tmp
 *.bak
+
+# Arquivos temporarios do Supabase CLI
+supabase/.temp/
