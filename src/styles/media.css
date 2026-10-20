@@ -187,3 +187,18 @@
   .media-detail-hero { grid-template-columns: 1fr; }
   .media-cover--detail { width: min(200px, 70%); margin: 0 auto; }
 }
+
+
+/* Filtro de autores: largura equilibrada no desktop e quebra suave no mobile. */
+.collection-select--author { flex: 0 1 210px; min-width: 170px; }
+.collection-select--author > svg { flex: 0 0 auto; }
+.collection-select--author select { min-width: 0; width: 100%; flex: 1; text-overflow: ellipsis; }
+
+@media (max-width: 900px) {
+  .collection-search { flex-basis: 100%; }
+  .collection-select--author { flex: 1 1 170px; }
+}
+
+@media (max-width: 590px) {
+  .collection-select--author { flex: 1 1 140px; min-width: 0; }
+}

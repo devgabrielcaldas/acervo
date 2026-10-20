@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ArrowRight, BookOpen, Film, LibraryBig, Plus, Search, SlidersHorizontal, Tv } from 'lucide-react';
+import { ArrowRight, BookOpen, Film, LibraryBig, Plus, Search, SlidersHorizontal, Tv, UserRound } from 'lucide-react';
 import { Link } from 'react-router';
 import { MediaCard } from '../components/media/MediaCard';
 import { listMedia, updateMedia } from '../services/mediaRepository';
@@ -17,6 +17,8 @@ const tabs = [
   { key: 'series', label: 'Séries', icon: Tv },
 ] as const;
 
+const authorCollator = new Intl.Collator('pt-BR', { sensitivity: 'base' });
+
 function formatCount(n: number) { return `${n} ${n === 1 ? 'título' : 'títulos'}`; }
 function errorText(error: unknown) { return error instanceof Error ? error.message : 'Não foi possível acessar seus registros.'; }
 
@@ -26,6 +28,7 @@ export function CollectionPage() {
   const [error, setError] = useState('');
   const [kind, setKind] = useState<KindFilter>('all');
   const [status, setStatus] = useState<StatusFilter>('all');
+  const [author, setAuthor] = useState('all');
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<SortMode>('recent');
   const [busyId, setBusyId] = useState<string>();
@@ -60,11 +63,31 @@ export function CollectionPage() {
     return () => { active = false; };
   }, []);
 
+  // Extrai apenas autores de livros desta conta, remove repetições e ordena A–Z.
+  const authors = useMemo(() => {
+    const names = items.flatMap((item) =>
+      item.kind === 'book' && item.author?.trim()
+        ? [item.author.trim().replace(/\s+/g, ' ')]
+        : [],
+    ).sort(authorCollator.compare);
+
+    return names.filter((name, index) =>
+      index === 0 || authorCollator.compare(name, names[index - 1]) !== 0,
+    );
+  }, [items]);
+
+  // Se um autor deixar de existir na coleção, evita um filtro sem opção no select.
+  const selectedAuthor = authors.some((name) => authorCollator.compare(name, author) === 0)
+    ? author
+    : 'all';
+
   const visible = useMemo(() => {
     const query = search.toLocaleLowerCase('pt-BR').trim();
     const result = items.filter((item) =>
       (kind === 'all' || item.kind === kind) &&
       (status === 'all' || item.status === status) &&
+      (selectedAuthor === 'all' || (item.kind === 'book' &&
+        authorCollator.compare(item.author?.trim().replace(/\s+/g, ' ') ?? '', selectedAuthor) === 0)) &&
       (!query || [item.title, item.kind === 'book' ? item.author : item.kind === 'movie' ? item.director : '', ...item.genres]
         .join(' ').toLocaleLowerCase('pt-BR').includes(query)),
     );
@@ -74,7 +97,7 @@ export function CollectionPage() {
       if (sort === 'completed') return (b.completedOn ?? '').localeCompare(a.completedOn ?? '') || b.updatedAt.localeCompare(a.updatedAt);
       return b.updatedAt.localeCompare(a.updatedAt);
     });
-  }, [items, kind, status, search, sort]);
+  }, [items, kind, status, selectedAuthor, search, sort]);
 
   const toggleFavorite = async (item: MediaRecord) => {
     setBusyId(item.id);
@@ -88,8 +111,8 @@ export function CollectionPage() {
     }
   };
 
-  const clearFilters = () => { setKind('all'); setStatus('all'); setSearch(''); setSort('recent'); };
-  const hasFilters = kind !== 'all' || status !== 'all' || search.length > 0 || sort !== 'recent';
+  const clearFilters = () => { setKind('all'); setStatus('all'); setAuthor('all'); setSearch(''); setSort('recent'); };
+  const hasFilters = kind !== 'all' || status !== 'all' || selectedAuthor !== 'all' || search.length > 0 || sort !== 'recent';
 
   return (
     <div className="collection-page page-enter">
@@ -106,7 +129,10 @@ export function CollectionPage() {
         <div className="collection-tabs" role="group" aria-label="Filtrar por categoria">
           {tabs.map(({ key, label, icon: Icon }) => (
             <button key={key} type="button" className={`collection-tab ${kind === key ? 'collection-tab--active' : ''}`}
-              aria-pressed={kind === key} onClick={() => setKind(key)}>
+              aria-pressed={kind === key} onClick={() => {
+                setKind(key);
+                if (key === 'movie' || key === 'series') setAuthor('all');
+              }}>
               <Icon size={17} /><span>{label}</span>
               <small>{key === 'all' ? items.length : items.filter((item) => item.kind === key).length}</small>
             </button>
@@ -118,6 +144,16 @@ export function CollectionPage() {
             <span className="sr-only">Buscar por título, autor, diretor ou gênero</span>
             <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar na coleção..." />
           </label>
+          {(kind === 'all' || kind === 'book') && authors.length > 0 && (
+            <label className="collection-select collection-select--author">
+              <UserRound size={16} aria-hidden="true" />
+              <span className="sr-only">Filtrar livros por autor</span>
+              <select value={selectedAuthor} onChange={(event) => setAuthor(event.target.value)}>
+                <option value="all">Todos os autores</option>
+                {authors.map((name) => <option key={name} value={name}>{name}</option>)}
+              </select>
+            </label>
+          )}
           <label className="collection-select">
             <SlidersHorizontal size={16} aria-hidden="true" />
             <span className="sr-only">Filtrar por status</span>
