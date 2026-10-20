@@ -1,0 +1,21 @@
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const vm=require('node:vm');
+const ts=require('typescript');
+const root=__dirname+'/../supabase/functions/catalog/catalog-utils.ts';
+const {outputText, diagnostics}=ts.transpileModule(fs.readFileSync(root,'utf8'),{fileName:root,reportDiagnostics:true,compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}});
+assert.equal(diagnostics?.length,0);
+const sandboxModule={exports:{}};
+vm.runInNewContext(outputText,{sandboxModule,exports:sandboxModule.exports,URL,Date,Set,Array,Number,Object,String,RegExp}, {filename:root});
+const a=sandboxModule.exports;
+let count=0;function test(name,fn){fn();console.log('✓',name);count++;}
+test('Google Books preserva ano, autor, páginas e capa HTTPS',()=>{const r=a.googleBooksResults({items:[{id:'book-12',volumeInfo:{title:'A Paciente Silenciosa',authors:['Alex Michaelides'],publishedDate:'2019-04-01',pageCount:342,categories:['Fiction'],imageLinks:{thumbnail:'http://books.google.com/books/content?id=12'}}}]});assert.equal(r.length,1);assert.equal(r[0].creator,'Alex Michaelides');assert.equal(r[0].year,2019);assert.equal(r[0].pages,342);assert.match(r[0].coverUrl,/^https:/);});
+test('Google Books ignora registros incompletos',()=>assert.equal(a.googleBooksResults({items:[{}, {id:'x',volumeInfo:{}}]}).length,0));
+test('Open Library permite informações incompletas e marca ano original',()=>{const r=a.openLibraryResults({docs:[{key:'/works/OL1234W',title:'O Vilarejo',first_publish_year:2015,author_name:['Raphael Montes'],cover_i:99}]});assert.equal(r[0].year,2015);assert.match(r[0].edition,/original/);assert.equal(r[0].coverUrl,'https://covers.openlibrary.org/b/id/99-L.jpg')});
+test('TMDB mapeia títulos portugueses, ano, pôster e ids',()=>{const r=a.tmdbResults({results:[{id:1398,name:'Breaking Bad',first_air_date:'2008-01-20',poster_path:'/abc123.jpg'}]},'series');assert.equal(r[0].id,'1398');assert.equal(r[0].year,2008);assert.match(r[0].coverUrl,/image\.tmdb/);});
+test('Detalhes TMDB trazem diretor, duração e gêneros',()=>{const d=a.tmdbDetail({runtime:119,genres:[{name:'Suspense'}],credits:{crew:[{job:'Director',name:'David Fincher'}]}},'movie');assert.equal(d.creator,'David Fincher');assert.equal(d.durationMinutes,119);assert.equal(d.genres[0],'Suspense');});
+test('Detalhes série trazem temporadas e episódios',()=>{const d=a.tmdbDetail({number_of_seasons:3,number_of_episodes:19},'series');assert.equal(d.totalSeasons,3);assert.equal(d.totalEpisodes,19);});
+test('Lista final mantém duas edições do Google e omite duplicação Open Library idêntica',()=>{const x={source:'google-books',id:'a',kind:'book',title:'Verity',creator:'Colleen Hoover',genres:[]};const y={...x,id:'b'};const z={...x,source:'open-library',id:'OL3W'};assert.equal(a.mergeGoogleAndOpenLibrary([x,y],[z]).length,2);});
+test('Proxy bloqueia origem arbitrária e endereços internos',()=>{for(const url of ['http://127.0.0.1/a.png','https://evil.example/image.jpg','https://books.google.com.evil.org/books/content','file:///a'])assert.equal(a.validateCoverUrl(url),null);});
+test('Proxy aceita domínios permitidos e bloqueia pasta TMDB fora de imagens',()=>{assert.ok(a.validateCoverUrl('https://image.tmdb.org/t/p/w500/abc.jpg'));assert.equal(a.validateCoverUrl('https://image.tmdb.org/api/key'),null);assert.ok(a.validateCoverUrl('https://covers.openlibrary.org/b/id/123-L.jpg'));});
+console.log(`\n${count} testes OK`);
