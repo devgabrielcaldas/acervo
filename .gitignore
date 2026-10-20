@@ -41,3 +41,6 @@ acervo-backup*.json
 
 # Arquivos temporarios do Supabase CLI
 supabase/.temp/
+
+# Documentacoes temporarias das atualizacoes
+LEIA-ME*.md
