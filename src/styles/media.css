@@ -230,3 +230,12 @@
 @keyframes catalog-spin{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){.catalog-spinner{animation:none}}
 @media (max-width:590px){.catalog-search{padding:9px}.catalog-search__heading{flex-wrap:wrap}.catalog-search__heading span{margin-left:0}.catalog-search__results{max-height:280px}}
+
+/* Filtro por ano de conclusão — mantém a mesma aparência dos dropdowns da coleção. */
+.collection-select--year { flex: 0 1 166px; min-width: 148px; }
+.collection-select--year select { flex: 1; min-width: 0; width: 100%; cursor: pointer; }
+.collection-results__description { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; }
+.collection-year-note { font-size: 11px; line-height: 1.5; color: var(--text-muted); }
+@media (max-width: 590px) {
+  .collection-select--year { flex: 1 1 140px; min-width: 0; }
+}

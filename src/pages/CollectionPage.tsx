@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ArrowRight, BookOpen, Film, LibraryBig, Plus, Search, SlidersHorizontal, Tv, UserRound } from 'lucide-react';
+import { ArrowRight, BookOpen, CalendarDays, Film, LibraryBig, Plus, Search, SlidersHorizontal, Tv, UserRound } from 'lucide-react';
 import { Link } from 'react-router';
 import { MediaCard } from '../components/media/MediaCard';
 import { listMedia, updateMedia } from '../services/mediaRepository';
 import type { MediaCategory, MediaRecord, MediaStatus } from '../types/media';
 import { statusLabels } from '../utils/mediaLabels';
+import { getCompletionYear, listCompletionYears } from '../utils/completionYears';
 
 type KindFilter = MediaCategory | 'all';
 type StatusFilter = MediaStatus | 'all';
@@ -29,6 +30,7 @@ export function CollectionPage() {
   const [kind, setKind] = useState<KindFilter>('all');
   const [status, setStatus] = useState<StatusFilter>('all');
   const [author, setAuthor] = useState('all');
+  const [completionYear, setCompletionYear] = useState('all');
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<SortMode>('recent');
   const [busyId, setBusyId] = useState<string>();
@@ -76,6 +78,12 @@ export function CollectionPage() {
     );
   }, [items]);
 
+  // Opções dinâmicas: somente anos com pelo menos um título realmente concluído e datado.
+  const completionYears = useMemo(() => listCompletionYears(items), [items]);
+  const selectedYear = completionYear === 'all' || completionYears.includes(completionYear)
+    ? completionYear
+    : 'all';
+
   // Se um autor deixar de existir na coleção, evita um filtro sem opção no select.
   const selectedAuthor = authors.some((name) => authorCollator.compare(name, author) === 0)
     ? author
@@ -86,6 +94,7 @@ export function CollectionPage() {
     const result = items.filter((item) =>
       (kind === 'all' || item.kind === kind) &&
       (status === 'all' || item.status === status) &&
+      (selectedYear === 'all' || getCompletionYear(item) === selectedYear) &&
       (selectedAuthor === 'all' || (item.kind === 'book' &&
         authorCollator.compare(item.author?.trim().replace(/\s+/g, ' ') ?? '', selectedAuthor) === 0)) &&
       (!query || [item.title, item.kind === 'book' ? item.author : item.kind === 'movie' ? item.director : '', ...item.genres]
@@ -97,7 +106,7 @@ export function CollectionPage() {
       if (sort === 'completed') return (b.completedOn ?? '').localeCompare(a.completedOn ?? '') || b.updatedAt.localeCompare(a.updatedAt);
       return b.updatedAt.localeCompare(a.updatedAt);
     });
-  }, [items, kind, status, selectedAuthor, search, sort]);
+  }, [items, kind, status, selectedYear, selectedAuthor, search, sort]);
 
   const toggleFavorite = async (item: MediaRecord) => {
     setBusyId(item.id);
@@ -111,8 +120,22 @@ export function CollectionPage() {
     }
   };
 
-  const clearFilters = () => { setKind('all'); setStatus('all'); setAuthor('all'); setSearch(''); setSort('recent'); };
-  const hasFilters = kind !== 'all' || status !== 'all' || selectedAuthor !== 'all' || search.length > 0 || sort !== 'recent';
+  // Selecionar um ano significa necessariamente buscar entre os itens concluídos.
+  const changeCompletionYear = (value: string) => {
+    setCompletionYear(value);
+    if (value !== 'all') setStatus('completed');
+  };
+
+  // Outro status (como Quero ler) não pode coexistir com um ano de conclusão.
+  const changeStatus = (value: StatusFilter) => {
+    setStatus(value);
+    if (value !== 'completed') setCompletionYear('all');
+  };
+
+  const clearFilters = () => {
+    setKind('all'); setStatus('all'); setAuthor('all'); setCompletionYear('all'); setSearch(''); setSort('recent');
+  };
+  const hasFilters = kind !== 'all' || status !== 'all' || selectedAuthor !== 'all' || selectedYear !== 'all' || search.length > 0 || sort !== 'recent';
 
   return (
     <div className="collection-page page-enter">
@@ -157,11 +180,21 @@ export function CollectionPage() {
           <label className="collection-select">
             <SlidersHorizontal size={16} aria-hidden="true" />
             <span className="sr-only">Filtrar por status</span>
-            <select value={status} onChange={(event) => setStatus(event.target.value as StatusFilter)}>
+            <select value={status} onChange={(event) => changeStatus(event.target.value as StatusFilter)}>
               <option value="all">Todos os status</option>
               {(Object.keys(statusLabels) as MediaStatus[]).map((value) => <option key={value} value={value}>{statusLabels[value]}</option>)}
             </select>
           </label>
+          {(status === 'all' || status === 'completed') && (
+            <label className="collection-select collection-select--year">
+              <CalendarDays size={16} aria-hidden="true" />
+              <span className="sr-only">Filtrar por ano de conclusão</span>
+              <select value={selectedYear} onChange={(event) => changeCompletionYear(event.target.value)}>
+                <option value="all">Todos os anos</option>
+                {completionYears.map((value) => <option key={value} value={value}>{value}</option>)}
+              </select>
+            </label>
+          )}
           <label className="collection-select">
             <span className="sr-only">Ordenação</span>
             <select value={sort} onChange={(event) => setSort(event.target.value as SortMode)}>
@@ -175,7 +208,10 @@ export function CollectionPage() {
       </div>
 
       <div className="collection-results">
-        <span className="section-kicker">{loading ? 'CARREGANDO...' : formatCount(visible.length).toLocaleUpperCase('pt-BR')}</span>
+        <div className="collection-results__description">
+          <span className="section-kicker">{loading ? 'CARREGANDO...' : formatCount(visible.length).toLocaleUpperCase('pt-BR')}</span>
+          {selectedYear !== 'all' && <span className="collection-year-note">Somente títulos concluídos com data registrada em {selectedYear}.</span>}
+        </div>
         {hasFilters && <button className="collection-clear" type="button" onClick={clearFilters}>Limpar filtros <ArrowRight size={14} /></button>}
       </div>
 
