@@ -2,6 +2,7 @@ import { Heart } from 'lucide-react';
 import { Link } from 'react-router';
 import { MediaCover } from './MediaCover';
 import { RatingStars } from './RatingStars';
+import { MediaProgress } from './MediaProgress';
 import { categoryLabels, describeCategoryStatus } from '../../utils/mediaLabels';
 import type { MediaRecord } from '../../types/media';
 
@@ -36,6 +37,7 @@ export function MediaCard({ item, onFavorite, busy = false }: {
         <Link to={`/colecao/${item.id}`} className="media-card__title">{item.title}</Link>
         <p className="media-card__subtitle">{subtitle || (item.releaseYear ? `Lançamento: ${item.releaseYear}` : categoryLabels[item.kind])}</p>
         <RatingStars rating={item.rating} />
+        <MediaProgress item={item} />
       </div>
     </article>
   );

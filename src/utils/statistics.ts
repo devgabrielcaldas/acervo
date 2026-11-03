@@ -3,7 +3,7 @@ import type { AnnualGoal, MediaCategory, MediaRecord } from '../types/media';
 export const categories = [
   { kind: 'book', field: 'books', label: 'Livros', completedLabel: 'Livros concluídos' },
   { kind: 'movie', field: 'movies', label: 'Filmes', completedLabel: 'Filmes assistidos' },
-  { kind: 'series', field: 'series', label: 'Séries', completedLabel: 'Séries concluídas' },
+  { kind: 'series', field: 'series', label: 'Temporadas', completedLabel: 'Temporadas concluídas' },
 ] as const satisfies ReadonlyArray<{
   kind: MediaCategory;
   field: 'books' | 'movies' | 'series';

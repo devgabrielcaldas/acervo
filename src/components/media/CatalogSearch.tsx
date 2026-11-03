@@ -19,33 +19,35 @@ export function CatalogSearch({kind,query,enabled,onSelect}:CatalogSearchProps) 
   const [loading,setLoading]=useState(false);
   const [selectedId,setSelectedId]=useState<string>();
   const [error,setError]=useState('');
+  const [alternativeQuery,setAlternativeQuery]=useState('');
   const requestId=useRef(0);
   const trimmed=query.trim();
+  const lookup = alternativeQuery.trim().length >= 3 ? alternativeQuery.trim() : trimmed;
 
   useEffect(()=>{
     const request=++requestId.current;
-    if(!enabled||trimmed.length<3){return;}
+    if(!enabled||lookup.length<3){return;}
     const timer=window.setTimeout(()=>{
-      void searchCatalog(kind,trimmed).then(({results,warnings})=>{
+      void searchCatalog(kind,lookup).then(({results,warnings})=>{
         if(request!==requestId.current)return;
-        setResults(results);setWarnings(warnings??[]);setResolvedQuery(`${kind}:${trimmed}`);setError('');
+        setResults(results);setWarnings(warnings??[]);setResolvedQuery(`${kind}:${lookup}`);setError('');
       }).catch((reason:unknown)=>{
         if(request!==requestId.current)return;
-        setResults([]);setResolvedQuery(`${kind}:${trimmed}`);setError(reason instanceof Error?reason.message:'Falha ao pesquisar.');
+        setResults([]);setResolvedQuery(`${kind}:${lookup}`);setError(reason instanceof Error?reason.message:'Falha ao pesquisar.');
       }).finally(()=>{if(request===requestId.current)setLoading(false);});
     },450);
     return()=>{window.clearTimeout(timer);requestId.current++;};
-  },[kind,trimmed,enabled]);
+  },[kind,lookup,enabled]);
 
   // Consultas em andamento têm indicador somente depois do debounce para evitar piscar.
   useEffect(()=>{
-    if(!enabled||trimmed.length<3)return;
+    if(!enabled||lookup.length<3)return;
     const timer=window.setTimeout(()=>setLoading(true),400);
     return()=>window.clearTimeout(timer);
-  },[kind,trimmed,enabled]);
+  },[kind,lookup,enabled]);
 
-  if(!enabled||trimmed.length<3)return null;
-  const current=resolvedQuery===`${kind}:${trimmed}`;
+  if(!enabled||lookup.length<3)return null;
+  const current=resolvedQuery===`${kind}:${lookup}`;
   const displayResults=current?results:[];
   const Icon=icons[kind];
   async function select(item:CatalogItem){
@@ -63,6 +65,9 @@ export function CatalogSearch({kind,query,enabled,onSelect}:CatalogSearchProps) 
       <div className="catalog-search__heading"><Search size={15} aria-hidden="true"/><strong>Busca inteligente</strong><span>{kind==='book'?'Edições em português primeiro · escolha a edição correta':'Escolha a obra ou continue manualmente'}</span></div>
       {loading && <p className="catalog-search__message" role="status"><LoaderCircle className="catalog-spinner" size={15}/> Procurando títulos...</p>}
       {!loading && current && displayResults.length===0 && !error && <p className="catalog-search__message">Nenhum resultado encontrado. Você pode continuar o cadastro normalmente.</p>}
+      {kind==='book' && current && displayResults.length===0 && !loading && <label className="catalog-search__alternative">Não encontrou? Tente o título original ou ISBN.
+        <input type="search" value={alternativeQuery} placeholder="Outro título ou ISBN" onChange={(e) => setAlternativeQuery(e.target.value)} />
+      </label>}
       {error && <p className="catalog-search__message catalog-search__message--error" role="alert">{error} Você também pode preencher manualmente.</p>}
       {!loading && current && displayResults.length>0 && <div className="catalog-search__results">
         {displayResults.slice(0,8).map(item=>{

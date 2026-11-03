@@ -115,6 +115,8 @@ function validateMedia(value: unknown, index: number): asserts value is MediaRec
   if (value.kind === 'book') {
     if (!optionalString(value.author) || !optionalInteger(value.totalPages, 1) ||
         !optionalInteger(value.currentPage) ||
+        !optionalInteger(value.ebookPercent) ||
+        (typeof value.ebookPercent === 'number' && value.ebookPercent > 100) ||
         (value.format !== undefined && !oneOf(value.format, ['physical', 'ebook', 'audiobook']))) {
       fail(`${tag}: campos de livro inválidos.`);
     }
@@ -122,11 +124,11 @@ function validateMedia(value: unknown, index: number): asserts value is MediaRec
       fail(`${tag}: a página atual ultrapassa o total de páginas.`);
     }
   }
-  if (value.kind === 'movie' && (!optionalString(value.director) || !optionalInteger(value.durationMinutes, 1))) {
+  if (value.kind === 'movie' && (!optionalString(value.director) || !optionalInteger(value.durationMinutes, 1) || !optionalInteger(value.pausedAtSeconds))) {
     fail(`${tag}: campos de filme inválidos.`);
   }
   if (value.kind === 'series' && (!optionalInteger(value.currentSeason, 1) ||
-      !optionalInteger(value.currentEpisode, 1) || !optionalInteger(value.totalSeasons, 1) ||
+      !optionalInteger(value.currentEpisode) || !optionalInteger(value.seasonNumber, 1) || !optionalInteger(value.tmdbId, 1) || !optionalString(value.seriesTitle) || !optionalInteger(value.pausedAtSeconds) || !optionalInteger(value.totalSeasons, 1) ||
       !optionalInteger(value.totalEpisodes, 1))) {
     fail(`${tag}: campos de série inválidos.`);
   }

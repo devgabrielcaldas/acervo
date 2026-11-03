@@ -3,6 +3,8 @@ import { ArrowLeft, CalendarDays, Heart, Pencil, Trash2 } from 'lucide-react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router';
 import { MediaCover } from '../components/media/MediaCover';
 import { RatingStars } from '../components/media/RatingStars';
+import { MediaProgress } from '../components/media/MediaProgress';
+import { formatPlaybackTime } from '../utils/progress';
 import { deleteMedia, getMedia, updateMedia } from '../services/mediaRepository';
 import type { MediaRecord } from '../types/media';
 import { categoryLabels, describeCategoryStatus, formatDate, priorityLabels } from '../utils/mediaLabels';
@@ -63,17 +65,22 @@ export function MediaDetailPage() {
   if (item.kind === 'book') facts.push(
     { label: 'Autor', value: item.author }, { label: 'Formato', value: item.format === 'physical' ? 'Físico' : item.format === 'ebook' ? 'E-book' : item.format === 'audiobook' ? 'Audiobook' : undefined },
     { label: 'Páginas', value: item.totalPages }, { label: 'Página atual', value: item.currentPage },
+    { label: 'Progresso e-book', value: item.ebookPercent !== undefined ? `${item.ebookPercent}%` : undefined },
   );
   if (item.kind === 'movie') facts.push({ label: 'Diretor', value: item.director }, { label: 'Duração', value: item.durationMinutes ? `${item.durationMinutes} min` : undefined });
+  if (item.kind === 'movie') facts.push({label:'Parou em',value:formatPlaybackTime(item.pausedAtSeconds)||undefined});
   if (item.kind === 'series') facts.push(
     { label: 'Temporada atual', value: item.currentSeason }, { label: 'Episódio atual', value: item.currentEpisode },
+    { label: 'Temporada do registro', value: item.seasonNumber },
+    { label: 'Episódios concluídos', value: item.currentEpisode },
     { label: 'Total de temporadas', value: item.totalSeasons }, { label: 'Total de episódios', value: item.totalEpisodes },
+    { label: 'Parou em', value: formatPlaybackTime(item.pausedAtSeconds)||undefined },
   );
 
   return (
     <div className="media-detail-page page-enter">
       <Link className="media-back" to="/colecao"><ArrowLeft size={17} /> Minha coleção</Link>
-      {saved && <div className="media-alert media-alert--success" role="status">Registro salvo com sucesso. Seus dados estão no armazenamento local.</div>}
+      {saved && <div className="media-alert media-alert--success" role="status">Registro salvo com sucesso. Seus dados foram enviados ao Acervo na nuvem.</div>}
       {error && <div className="media-alert media-alert--error" role="alert">{error}</div>}
       <div className="media-detail-hero">
         <MediaCover kind={item.kind} title={item.title} mediaId={item.id} coverId={item.coverId} className="media-cover--detail" />
@@ -84,6 +91,7 @@ export function MediaDetailPage() {
           {item.kind === 'movie' && item.director && <p className="media-detail-creator">Direção de {item.director}</p>}
           {item.genres.length > 0 && <div className="media-genres">{item.genres.map((genre) => <span key={genre}>{genre}</span>)}</div>}
           <div className="media-detail-rating"><RatingStars rating={item.rating} /></div>
+          <MediaProgress item={item} />
           {item.completedOn && <p className="media-detail-finished"><CalendarDays size={17} /> Concluído em {formatDate(item.completedOn)}</p>}
           <div className="media-detail-actions">
             <Link className="btn btn--primary" to={`/editar/${item.id}`}><Pencil size={17} /> Editar registro</Link>

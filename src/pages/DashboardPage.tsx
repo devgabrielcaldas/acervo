@@ -30,7 +30,7 @@ type SummaryCard = {
 const summaryCards: SummaryCard[] = [
   { label: 'Livros concluídos', detail: 'Suas leituras do ano', icon: BookOpen, kind: 'book' },
   { label: 'Filmes assistidos', detail: 'Seu cinema particular', icon: Film, kind: 'movie' },
-  { label: 'Séries concluídas', detail: 'Histórias em episódios', icon: Tv, kind: 'series' },
+  { label: 'Temporadas concluídas', detail: 'Cada temporada conta separadamente', icon: Tv, kind: 'series' },
 ];
 
 const currentYear = new Date().getFullYear();

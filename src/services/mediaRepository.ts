@@ -55,6 +55,8 @@ function validateInput(input: MediaInput): void {
   if (input.kind === 'book') {
     checkedInteger(input.totalPages, 'Total de páginas', 1);
     checkedInteger(input.currentPage, 'Página atual');
+    checkedInteger(input.ebookPercent, 'Percentual do e-book');
+    if (input.ebookPercent !== undefined && input.ebookPercent > 100) throw new Error('O percentual do e-book deve ficar entre 0 e 100.');
     if (input.totalPages !== undefined && input.currentPage !== undefined && input.currentPage > input.totalPages) {
       throw new Error('A página atual não pode superar o total de páginas.');
     }
@@ -62,12 +64,23 @@ function validateInput(input: MediaInput): void {
       throw new Error('Formato do livro inválido.');
     }
   }
-  if (input.kind === 'movie') checkedInteger(input.durationMinutes, 'Duração', 1);
+  if (input.kind === 'movie') {
+    checkedInteger(input.durationMinutes, 'Duração', 1);
+    checkedInteger(input.pausedAtSeconds, 'Tempo de pausa');
+    if (input.pausedAtSeconds !== undefined && input.pausedAtSeconds > 359999) throw new Error('Tempo de pausa inválido.');
+    if (input.durationMinutes && input.pausedAtSeconds !== undefined && input.pausedAtSeconds > input.durationMinutes * 60) throw new Error('A pausa ultrapassa a duração do filme.');
+  }
   if (input.kind === 'series') {
     checkedInteger(input.currentSeason, 'Temporada atual', 1);
+    checkedInteger(input.seasonNumber, 'Temporada', 1);
+    checkedInteger(input.tmdbId, 'ID TMDB', 1);
+    checkedInteger(input.pausedAtSeconds, 'Tempo de pausa');
+    if (input.pausedAtSeconds !== undefined && input.pausedAtSeconds > 359999) throw new Error('Tempo de pausa inválido.');
+    if (input.seriesTitle !== undefined && input.seriesTitle.trim().length === 0) throw new Error('O título da série não pode ser vazio.');
     checkedInteger(input.currentEpisode, 'Episódio atual', 1);
     checkedInteger(input.totalSeasons, 'Total de temporadas', 1);
     checkedInteger(input.totalEpisodes, 'Total de episódios', 1);
+    if (input.currentEpisode !== undefined && input.totalEpisodes !== undefined && input.currentEpisode > input.totalEpisodes) throw new Error('O progresso não pode ultrapassar os episódios da temporada.');
   }
 }
 
@@ -94,14 +107,14 @@ function normalize(input: MediaInput, id: string, createdAt: string, coverId?: s
       const book: BookInput = input;
       return {
         ...common, kind: 'book', author: optionalText(book.author), totalPages: book.totalPages,
-        currentPage: book.currentPage, format: book.format,
+        currentPage: book.currentPage, ebookPercent: book.ebookPercent, format: book.format,
       };
     }
     case 'movie': {
       const movie: MovieInput = input;
       return {
         ...common, kind: 'movie', director: optionalText(movie.director),
-        durationMinutes: movie.durationMinutes,
+        durationMinutes: movie.durationMinutes, pausedAtSeconds: movie.pausedAtSeconds,
       };
     }
     case 'series': {
@@ -109,7 +122,8 @@ function normalize(input: MediaInput, id: string, createdAt: string, coverId?: s
       return {
         ...common, kind: 'series', currentSeason: series.currentSeason,
         currentEpisode: series.currentEpisode, totalSeasons: series.totalSeasons,
-        totalEpisodes: series.totalEpisodes,
+        totalEpisodes: series.totalEpisodes, seriesTitle: optionalText(series.seriesTitle),
+        seasonNumber: series.seasonNumber, tmdbId: series.tmdbId, pausedAtSeconds: series.pausedAtSeconds,
       };
     }
   }

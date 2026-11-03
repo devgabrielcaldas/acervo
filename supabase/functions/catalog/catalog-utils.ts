@@ -13,6 +13,7 @@ export interface CatalogResult {
   durationMinutes?: number;
   totalSeasons?: number;
   totalEpisodes?: number;
+  seasons?: { number: number; name?: string; episodeCount?: number; year?: number; coverUrl?: string }[];
   coverUrl?: string;
   /** Alternativa segura para a capa da mesma edição/ISBN, se existir. */
   coverFallbackUrl?: string;
@@ -196,7 +197,17 @@ export function tmdbDetail(data: unknown, kind:'movie'|'series'): Partial<Catalo
   const credits=(info.credits??{}) as {crew?:unknown[]};
   const director=Array.isArray(credits.crew)?credits.crew.find(x=>(x as {job?:string})?.job==='Director') as {name?:string}|undefined:undefined;
   const poster=text(info.poster_path);
-  return {genres,creator:kind==='movie'?text(director?.name)||undefined:undefined,
+  const seasons = kind === 'series' && Array.isArray(info.seasons)
+    ? info.seasons.flatMap((entry:unknown) => {
+      const raw = entry as Record<string,unknown>;
+      const number = integer(raw?.season_number);
+      if (!number) return [];
+      const image = text(raw.poster_path);
+      return [{ number, name: text(raw.name) || undefined, episodeCount: integer(raw.episode_count),year:year(raw.air_date),
+        coverUrl: /^\/[\w-]+\.(jpg|png|webp)$/.test(image) ? `https://image.tmdb.org/t/p/w500${image}` : undefined }];
+    }).sort((a,b) => a.number-b.number)
+    : undefined;
+  return {seasons,genres,creator:kind==='movie'?text(director?.name)||undefined:undefined,
     durationMinutes:kind==='movie'?integer(info.runtime):undefined,
     totalSeasons:kind==='series'?integer(info.number_of_seasons):undefined,
     totalEpisodes:kind==='series'?integer(info.number_of_episodes):undefined,
@@ -217,4 +228,74 @@ export function mergeGoogleAndOpenLibrary(google: CatalogResult[], open: Catalog
     if(result.length>=15)break;
   }
   return result;
+}
+
+/** Ordena resultados com título mais próximo da pesquisa antes de outras edições. */
+export function rankBookResults(items: CatalogResult[], query: string): CatalogResult[] {
+  const tokens = normalized(query).split(/[^a-z0-9]+/).filter(token=>token.length>1);
+  const score = (item: CatalogResult) => {
+    const title = normalized(item.title);
+    const matches = tokens.filter(token=>title.includes(token)).length;
+    return (title===normalized(query)?30:0) + (tokens.length ? 12*matches/tokens.length:0) +
+      (item.language==='pt'?50:0) + (item.coverUrl?1:0);
+  };
+  return [...items].sort((a,b)=>score(b)-score(a));
+}
+export function tmdbSeasonDetails(data:unknown,number:number): {number:number;episodeCount?:number;name?:string;year?:number;coverUrl?:string} {
+  const info=(data??{}) as Record<string,unknown>;
+  const poster=text(info.poster_path);
+  const episodeCount=Array.isArray(info.episodes)?info.episodes.length:undefined;
+  return {number,episodeCount:episodeCount && episodeCount>0?episodeCount:undefined,
+    name:text(info.name)||undefined,year:year(info.air_date),
+    coverUrl:/^\/[\w-]+\.(jpg|png|webp)$/.test(poster)?`https://image.tmdb.org/t/p/w500${poster}`:undefined};
+}
+
+/** Estratégia de busca de livros, sem parâmetros não documentados pela Books API.
+ * Usa texto livre por padrão, pois buscas com operadores intitle:/isbn: vêm
+ * apresentando resultados vazios mesmo quando a obra está catalogada.
+ * As URLs são construídas apenas para domínios fixos e testadas isoladamente.
+ */
+export function bookSearchPlan(rawQuery: string) {
+  const query = rawQuery.trim().replace(/\s+/g, ' ');
+  const isbnCandidate = query.replace(/[\s-]/g, '');
+  const isbn = /^(?:\d{13}|\d{9}[\dXx])$/.test(isbnCandidate) ? isbnCandidate.toUpperCase() : undefined;
+  const google = new URL('https://www.googleapis.com/books/v1/volumes');
+  google.searchParams.set('q', isbn ?? query);
+  google.searchParams.set('maxResults', '20');
+  google.searchParams.set('printType', 'books');
+
+  const fields='key,title,author_name,first_publish_year,cover_i,number_of_pages_median,subject,language,editions,editions.key,editions.title,editions.language,editions.cover_i,editions.publish_date,editions.number_of_pages,editions.isbn_13';
+  const open = new URL('https://openlibrary.org/search.json');
+  open.searchParams.set(isbn ? 'q' : 'title', isbn ? `isbn:${isbn}` : query);
+  open.searchParams.set('lang', 'pt');
+  open.searchParams.set('limit', '8');
+  open.searchParams.set('fields', fields);
+
+  // Segunda estratégia: pesquisa livre, inclusive com variações de tradução.
+  const openBroad = new URL('https://openlibrary.org/search.json');
+  openBroad.searchParams.set('q', isbn ? isbn : query);
+  openBroad.searchParams.set('lang', 'pt');
+  openBroad.searchParams.set('limit', '8');
+  openBroad.searchParams.set('fields', fields);
+
+  const googlePt = new URL(google);
+  googlePt.searchParams.set('langRestrict', 'pt');
+  return { google, googlePt, open, openBroad, isbn };
+}
+
+/** Consulta direta /isbn/<ISBN>.json: fallback quando a busca indexada não localiza a edição. */
+export function openLibraryIsbnEdition(data: unknown, isbn: string): CatalogResult | undefined {
+  if (!data || typeof data !== 'object' || Array.isArray(data)) return undefined;
+  const entry = data as Record<string, unknown>;
+  const works = Array.isArray(entry.works) ? entry.works : [];
+  const workId = text((works[0] as { key?:unknown } | undefined)?.key).split('/').pop();
+  const title = text(entry.title);
+  if (!workId || !/^OL\d+W$/.test(workId) || !title) return undefined;
+  const isbnCover = `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg?default=false`;
+  const cover = editionCover(entry);
+  return {source:'open-library',kind:'book',id:workId,title,
+    genres:portugueseGenres(entry.subjects),pages:integer(entry.number_of_pages),year:year(entry.publish_date),
+    language:editionLanguage(entry.languages),coverUrl:cover ?? isbnCover,
+    coverFallbackUrl:cover && cover !== isbnCover ? isbnCover : undefined,
+    edition:'Edição identificada pelo ISBN · confira idioma e editora'};
 }

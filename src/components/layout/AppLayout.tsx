@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
 import {
   Bookmark, BookOpen, ChevronRight, Heart, History, LayoutDashboard,
-  LibraryBig, LogOut, Menu, Moon, Plus, Settings2, Sparkles, Sun, Target, X,
+  LibraryBig, LogOut, Menu, Moon, PlayCircle, Plus, Settings2, Sparkles, Sun, Target, X,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router';
@@ -14,6 +14,7 @@ type NavigationItem = { to: string; label: string; shortLabel: string; icon: Luc
 const navigation: NavigationItem[] = [
   { to: '/', label: 'Visão geral', shortLabel: 'Início', icon: LayoutDashboard },
   { to: '/colecao', label: 'Minha coleção', shortLabel: 'Coleção', icon: LibraryBig },
+  { to: '/andamento', label: 'Em andamento', shortLabel: 'Andamento', icon: PlayCircle },
   { to: '/desejos', label: 'Lista de desejos', shortLabel: 'Desejos', icon: Bookmark },
   { to: '/historico', label: 'Histórico', shortLabel: 'Histórico', icon: History },
   { to: '/favoritos', label: 'Favoritos', shortLabel: 'Favoritos', icon: Heart },
@@ -171,7 +172,7 @@ export function AppLayout() {
         </header>
         <main id="conteudo-principal" className="main-content" tabIndex={-1}><Outlet /></main>
         <nav className="bottom-nav" aria-label="Navegação rápida">
-          {navigation.slice(0, 5).map(({ to, shortLabel, icon: Icon }) => (
+          {navigation.slice(0, 6).map(({ to, shortLabel, icon: Icon }) => (
             <NavLink key={to} to={to} end={to === '/'}
               className={({ isActive }) => `bottom-nav__link ${isActive ? 'bottom-nav__link--active' : ''}`}>
               <Icon size={19} strokeWidth={1.9} aria-hidden="true" /><span>{shortLabel}</span>

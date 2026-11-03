@@ -11,6 +11,7 @@ import { MediaFormPage } from './pages/MediaFormPage';
 import { GoalsPage } from './pages/GoalsPage';
 import { StoragePage } from './pages/StoragePage';
 import { WishlistPage } from './pages/WishlistPage';
+import { InProgressPage } from './pages/InProgressPage';
 
 export default function App() {
   const { user, loading } = useAuth();
@@ -25,6 +26,7 @@ export default function App() {
         <Route path="novo" element={<MediaFormPage />} />
         <Route path="editar/:id" element={<MediaFormPage />} />
         <Route path="desejos" element={<WishlistPage />} />
+        <Route path="andamento" element={<InProgressPage />} />
         <Route path="historico" element={<HistoryPage />} />
         <Route path="favoritos" element={<FavoritesPage />} />
         <Route path="metas" element={<GoalsPage />} />

@@ -25,6 +25,8 @@ export interface BookInput extends MediaInputBase {
   author?: string;
   totalPages?: number;
   currentPage?: number;
+  /** Avanço em e-books, independente do total de páginas. */
+  ebookPercent?: number;
   format?: BookFormat;
 }
 
@@ -32,6 +34,8 @@ export interface MovieInput extends MediaInputBase {
   kind: 'movie';
   director?: string;
   durationMinutes?: number;
+  /** Última posição de reprodução em segundos. */
+  pausedAtSeconds?: number;
 }
 
 export interface SeriesInput extends MediaInputBase {
@@ -40,6 +44,11 @@ export interface SeriesInput extends MediaInputBase {
   currentEpisode?: number;
   totalSeasons?: number;
   totalEpisodes?: number;
+  /** Um registro por temporada, sem transformar a série toda em concluída. */
+  seriesTitle?: string;
+  seasonNumber?: number;
+  tmdbId?: number;
+  pausedAtSeconds?: number;
 }
 
 export type MediaInput = BookInput | MovieInput | SeriesInput;
@@ -58,6 +67,8 @@ export interface BookRecord extends MediaRecordBase {
   author?: string;
   totalPages?: number;
   currentPage?: number;
+  /** Avanço em e-books, independente do total de páginas. */
+  ebookPercent?: number;
   format?: BookFormat;
 }
 
@@ -65,6 +76,8 @@ export interface MovieRecord extends MediaRecordBase {
   kind: 'movie';
   director?: string;
   durationMinutes?: number;
+  /** Última posição de reprodução em segundos. */
+  pausedAtSeconds?: number;
 }
 
 export interface SeriesRecord extends MediaRecordBase {
@@ -73,6 +86,11 @@ export interface SeriesRecord extends MediaRecordBase {
   currentEpisode?: number;
   totalSeasons?: number;
   totalEpisodes?: number;
+  /** Um registro por temporada, sem transformar a série toda em concluída. */
+  seriesTitle?: string;
+  seasonNumber?: number;
+  tmdbId?: number;
+  pausedAtSeconds?: number;
 }
 
 export type MediaRecord = BookRecord | MovieRecord | SeriesRecord;

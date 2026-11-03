@@ -14,6 +14,7 @@ export interface CatalogItem {
   durationMinutes?: number;
   totalSeasons?: number;
   totalEpisodes?: number;
+  seasons?: { number: number; name?: string; episodeCount?: number; year?: number; coverUrl?: string }[];
   coverUrl?: string;
   coverFallbackUrl?: string;
   edition?: string;
@@ -47,6 +48,16 @@ export async function loadCatalogDetails(item: CatalogItem): Promise<CatalogItem
   const loaded=(data as {item?:CatalogItem})?.item;
   if(!loaded||loaded.kind!==item.kind)throw new Error('A resposta do catálogo está incompleta.');
   return loaded;
+}
+export interface CatalogSeason { number: number; episodeCount?: number; year?: number; coverUrl?: string; name?: string; }
+export async function loadCatalogSeason(tmdbId: number, seasonNumber: number): Promise<CatalogSeason> {
+  const { data, error } = await requireSupabase().functions.invoke('catalog', {
+    body: { action: 'season', kind: 'series', tmdbId, seasonNumber },
+  });
+  if (error) return messageFromError(error, 'Não foi possível carregar a temporada.');
+  const season = (data as {season?: CatalogSeason})?.season;
+  if (!season || season.number !== seasonNumber) throw new Error('Dados da temporada incompletos.');
+  return season;
 }
 /**
  * As Edge Functions devolvem a capa com Content-Type image/jpeg, image/png ou

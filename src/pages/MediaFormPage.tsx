@@ -1,15 +1,16 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { ArrowLeft, BookOpen, Check, Film, ImagePlus, Save, Trash2, Tv } from 'lucide-react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { MediaCover } from '../components/media/MediaCover';
 import { RatingStars } from '../components/media/RatingStars';
 import { CatalogSearch } from '../components/media/CatalogSearch';
-import { downloadCatalogCover } from '../services/catalogClient';
+import { downloadCatalogCover, loadCatalogSeason } from '../services/catalogClient';
 import type { CatalogItem } from '../services/catalogClient';
 import { addMedia, getMedia, updateMedia } from '../services/mediaRepository';
 import { removeCover, saveCover } from '../services/coverRepository';
 import type { BookFormat, DateOnly, MediaCategory, MediaInput, MediaRecord, MediaStatus, WishPriority } from '../types/media';
+import { formatPlaybackTime, parsePlaybackTime, seasonDisplayTitle } from '../utils/progress';
 
 interface FormValues {
   kind: MediaCategory;
@@ -27,6 +28,11 @@ interface FormValues {
   priority: '' | WishPriority;
   totalPages: string;
   currentPage: string;
+  ebookPercent: string;
+  pausedAt: string;
+  seriesTitle: string;
+  seasonNumber: string;
+  tmdbId: string;
   format: '' | BookFormat;
   durationMinutes: string;
   currentSeason: string;
@@ -38,7 +44,8 @@ interface FormValues {
 const initialValues: FormValues = {
   kind: 'book', title: '', status: 'wishlist', author: '', director: '', genres: '',
   releaseYear: '', startedOn: '', completedOn: '', rating: '', favorite: false,
-  notes: '', priority: '', totalPages: '', currentPage: '', format: '',
+  notes: '', priority: '', totalPages: '', currentPage: '', ebookPercent: '', pausedAt: '',
+  seriesTitle: '', seasonNumber: '', tmdbId: '', format: '',
   durationMinutes: '', currentSeason: '', currentEpisode: '', totalSeasons: '', totalEpisodes: '',
 };
 
@@ -52,12 +59,15 @@ function valuesFromRecord(record: MediaRecord): FormValues {
   };
   if (record.kind === 'book') return {
     ...fields, author: record.author ?? '', totalPages: String(record.totalPages ?? ''),
-    currentPage: String(record.currentPage ?? ''), format: record.format ?? '',
+    currentPage: String(record.currentPage ?? ''), ebookPercent: String(record.ebookPercent ?? ''), format: record.format ?? '',
   };
-  if (record.kind === 'movie') return { ...fields, director: record.director ?? '', durationMinutes: String(record.durationMinutes ?? '') };
+  if (record.kind === 'movie') return { ...fields, director: record.director ?? '', durationMinutes: String(record.durationMinutes ?? ''),
+    pausedAt: formatPlaybackTime(record.pausedAtSeconds) };
   return {
     ...fields, currentSeason: String(record.currentSeason ?? ''), currentEpisode: String(record.currentEpisode ?? ''),
     totalSeasons: String(record.totalSeasons ?? ''), totalEpisodes: String(record.totalEpisodes ?? ''),
+    seriesTitle: record.seriesTitle ?? '', seasonNumber: String(record.seasonNumber ?? ''),
+    tmdbId: String(record.tmdbId ?? ''), pausedAt: formatPlaybackTime(record.pausedAtSeconds),
   };
 }
 
@@ -74,15 +84,18 @@ function createInput(values: FormValues): MediaInput {
   };
   if (values.kind === 'book') return {
     ...common, kind: 'book', author: values.author, totalPages: optionalNumber(values.totalPages),
-    currentPage: optionalNumber(values.currentPage), format: values.format || undefined,
+    currentPage: optionalNumber(values.currentPage), ebookPercent: optionalNumber(values.ebookPercent), format: values.format || undefined,
   };
   if (values.kind === 'movie') return {
     ...common, kind: 'movie', director: values.director, durationMinutes: optionalNumber(values.durationMinutes),
+    pausedAtSeconds: values.status === 'in_progress' || values.status === 'paused' ? parsePlaybackTime(values.pausedAt) : undefined,
   };
   return {
     ...common, kind: 'series', currentSeason: optionalNumber(values.currentSeason),
     currentEpisode: optionalNumber(values.currentEpisode), totalSeasons: optionalNumber(values.totalSeasons),
     totalEpisodes: optionalNumber(values.totalEpisodes),
+    seriesTitle: values.seriesTitle || undefined, seasonNumber: optionalNumber(values.seasonNumber),
+    tmdbId: optionalNumber(values.tmdbId), pausedAtSeconds: values.status === 'in_progress' || values.status === 'paused' ? parsePlaybackTime(values.pausedAt) : undefined,
   };
 }
 
@@ -107,6 +120,11 @@ export function MediaFormPage() {
   const [catalogCoverUrl, setCatalogCoverUrl] = useState<string>();
   const [catalogCoverFallbackUrl, setCatalogCoverFallbackUrl] = useState<string>();
   const [fetchingCover, setFetchingCover] = useState(false);
+  const [coverSource, setCoverSource] = useState<'catalog' | 'manual' | null>(null);
+  const [availableSeasons, setAvailableSeasons] = useState<NonNullable<CatalogItem['seasons']>>([]);
+  const [seasonBusy, setSeasonBusy] = useState(false);
+  const seasonRequest = useRef(0);
+  const coverRequest = useRef(0);
 
   useEffect(() => {
     if (!id) return;
@@ -131,7 +149,7 @@ export function MediaFormPage() {
     ...current, status: value, completedOn: value === 'completed' ? current.completedOn : '',
   }));
 
-  function chooseCover(next: File | undefined) {
+  function chooseCover(next: File | undefined, source: 'catalog' | 'manual' = 'manual') {
     if (!next) return;
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(next.type)) {
       setError('A capa deve estar em JPG, PNG ou WebP.'); return;
@@ -139,7 +157,9 @@ export function MediaFormPage() {
     if (next.size > 12 * 1024 * 1024) {
       setError('A imagem deve ter no máximo 12 MB.'); return;
     }
+    if (source === 'manual') { coverRequest.current++; setFetchingCover(false); }
     setCoverSelection({ file: next, url: URL.createObjectURL(next) });
+    setCoverSource(source);
     setCatalogCoverUrl(undefined);
     setCatalogCoverFallbackUrl(undefined);
     setRemoveExistingCover(false);
@@ -147,21 +167,24 @@ export function MediaFormPage() {
   }
 
   async function acceptCatalogCover(url: string, confirmReplace = false, fallbackUrl?: string) {
-    if (confirmReplace && (file || (record?.coverId && !removeExistingCover)) &&
+    if (confirmReplace && (coverSource === 'manual' || (record?.coverId && !removeExistingCover)) &&
         !window.confirm('Substituir a capa atual pela imagem do catálogo?')) return;
+    const request = ++coverRequest.current;
     setFetchingCover(true);
     try {
       const selected = await downloadCatalogCover(url, fallbackUrl);
-      chooseCover(selected);
+      if (request !== coverRequest.current) return;
+      chooseCover(selected, 'catalog');
       setCatalogHint('Capa do catálogo pronta. Você ainda pode escolher outra imagem.');
     } catch (reason) {
-      setCatalogHint(`Não foi possível baixar a capa automática: ${getError(reason)}. Você pode escolher uma capa manualmente.`);
+      if (request === coverRequest.current) setCatalogHint(`Não foi possível baixar a capa automática: ${getError(reason)}. Você pode escolher uma capa manualmente.`);
     } finally {
-      setFetchingCover(false);
+      if (request === coverRequest.current) setFetchingCover(false);
     }
   }
 
   async function acceptCatalogItem(item: CatalogItem) {
+    coverRequest.current++;
     setValues(current => ({
       ...current,
       title: item.title,
@@ -173,14 +196,53 @@ export function MediaFormPage() {
       durationMinutes: current.kind === 'movie' && item.durationMinutes ? String(item.durationMinutes) : current.durationMinutes,
       totalSeasons: current.kind === 'series' && item.totalSeasons ? String(item.totalSeasons) : current.totalSeasons,
       totalEpisodes: current.kind === 'series' && item.totalEpisodes ? String(item.totalEpisodes) : current.totalEpisodes,
+      seriesTitle: current.kind === 'series' ? item.title : current.seriesTitle,
+      tmdbId: current.kind === 'series' && item.source === 'tmdb' ? item.id : current.tmdbId,
+      seasonNumber: current.kind === 'series' ? '' : current.seasonNumber,
+      currentEpisode: current.kind === 'series' ? '' : current.currentEpisode,
     }));
+    seasonRequest.current++;
+    setAvailableSeasons(item.kind === 'series' ? item.seasons ?? [] : []);
     setCatalogActive(false);
+    if (coverSource === 'catalog') { setCoverSelection(null); setCoverSource(null); }
     setCatalogCoverUrl(item.coverUrl);
     setCatalogCoverFallbackUrl(item.coverFallbackUrl);
     setCatalogHint(`Informações preenchidas a partir de ${item.source === 'tmdb' ? 'TMDB' : item.source === 'google-books' ? 'Google Books' : 'Open Library'}. Confira os dados antes de salvar.`);
-    if (item.coverUrl && !file && !(record?.coverId && !removeExistingCover)) {
+    if (item.coverUrl && item.kind !== 'series' && (!file || coverSource === 'catalog') && !(record?.coverId && !removeExistingCover)) {
       await acceptCatalogCover(item.coverUrl, false, item.coverFallbackUrl);
     }
+  }
+
+
+  /** Temporada vira um registro independente, com episódios e capa específicos. */
+  async function selectSeason(numberText: string) {
+    const token = ++seasonRequest.current;
+    const number = optionalNumber(numberText);
+    const base = values.seriesTitle || values.title.replace(/\s*[—-]\s*Temp\.\s*\d+$/i,'');
+    const summary = availableSeasons.find((season) => season.number === number);
+    coverRequest.current++;
+    setValues((current) => ({ ...current, seriesTitle: base, seasonNumber: numberText,
+      title: number ? seasonDisplayTitle(base, number) : base,
+      totalEpisodes: summary?.episodeCount ? String(summary.episodeCount) : current.totalEpisodes,
+      releaseYear: summary?.year ? String(summary.year) : current.releaseYear,
+      currentEpisode: '', pausedAt: '' }));
+    if (!number || !values.tmdbId) return;
+    setSeasonBusy(true);
+    try {
+      const detail = await loadCatalogSeason(Number(values.tmdbId),number);
+      if (token !== seasonRequest.current) return;
+      setValues((current) => current.seasonNumber !== numberText ? current : ({...current,
+        totalEpisodes: detail.episodeCount ? String(detail.episodeCount) : current.totalEpisodes,
+        releaseYear: detail.year ? String(detail.year) : current.releaseYear }));
+      const seasonCover = detail.coverUrl ?? summary?.coverUrl;
+      setCatalogCoverUrl(seasonCover ?? catalogCoverUrl);
+      if (seasonCover && coverSource !== 'manual' && !(record?.coverId && !removeExistingCover)) {
+        await acceptCatalogCover(seasonCover);
+      }
+    } catch (reason) {
+      if (token === seasonRequest.current) setCatalogHint(`Temporada selecionada. Detalhes não disponíveis: ${getError(reason)}. Você pode informar os episódios manualmente.`);
+      if (summary?.coverUrl && coverSource !== 'manual' && !(record?.coverId && !removeExistingCover)) await acceptCatalogCover(summary.coverUrl);
+    } finally { if (token === seasonRequest.current) setSeasonBusy(false); }
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -231,7 +293,7 @@ export function MediaFormPage() {
             <div className="media-form-section-title"><span>01</span><div><h2>O que vamos guardar?</h2><p>Escolha o tipo e as informações principais.</p></div></div>
             <div className="media-kind-options" role="group" aria-label="Categoria do registro">
               {options.map(({ kind, label, Icon }) => (
-                <button key={kind} type="button" disabled={editing} onClick={() => { change('kind', kind); setCatalogActive(false); setCatalogCoverUrl(undefined); setCatalogCoverFallbackUrl(undefined); setCatalogHint(''); }}
+                <button key={kind} type="button" disabled={editing} onClick={() => { seasonRequest.current++; setAvailableSeasons([]); setCoverSource(null); change('kind', kind); setCatalogActive(false); setCatalogCoverUrl(undefined); setCatalogCoverFallbackUrl(undefined); setCatalogHint(''); }}
                   className={`media-kind ${values.kind === kind ? 'media-kind--active' : ''}`} aria-pressed={values.kind === kind}>
                   <Icon size={20} /> {label}
                 </button>
@@ -244,7 +306,7 @@ export function MediaFormPage() {
                   onChange={(event) => { change('title', event.target.value); setCatalogActive(true); setCatalogCoverUrl(undefined); setCatalogCoverFallbackUrl(undefined); setCatalogHint(''); }} /></label>
               {catalogActive && values.title.trim().length >= 3 && (
                 <div className="media-field media-field--wide">
-                  <CatalogSearch kind={values.kind} query={values.title} enabled={catalogActive} onSelect={acceptCatalogItem} />
+                  <CatalogSearch key={`${values.kind}:${values.title}`} kind={values.kind} query={values.title} enabled={catalogActive} onSelect={acceptCatalogItem} />
                 </div>
               )}
               <label className="media-field"><span>Status <b>*</b></span>
@@ -303,21 +365,52 @@ export function MediaFormPage() {
           <section className="media-form-panel">
             <div className="media-form-section-title"><span>03</span><div><h2>Detalhes {values.kind === 'book' ? 'da leitura' : values.kind === 'movie' ? 'do filme' : 'da série'}</h2><p>Opcionais — complete quando quiser.</p></div></div>
             <div className="media-fields-grid">
+              {values.kind === 'series' && <>
+                <label className="media-field media-field--wide"><span>Nome da série (sem temporada)</span>
+                  <input value={values.seriesTitle} placeholder="Ex.: Lost" onChange={(e) => setValues(current=>({...current,seriesTitle:e.target.value, title:current.seasonNumber ? seasonDisplayTitle(e.target.value,Number(current.seasonNumber)) : e.target.value}))} />
+                  <small>Ao escolher a temporada, o título fica como “Lost — Temp. 1”. Cada temporada é um registro separado para suas metas.</small>
+                </label>
+                <label className="media-field"><span>Temporada do registro</span>
+                  {availableSeasons.length > 0 ? (
+                    <select value={values.seasonNumber} required={!editing} disabled={seasonBusy || editing} onChange={(e) => void selectSeason(e.target.value)}>
+                      <option value="">Selecionar temporada</option>
+                      {availableSeasons.map(s => <option key={s.number} value={s.number}>{`Temporada ${s.number}${s.episodeCount ? ` · ${s.episodeCount} episódios` : ''}`}</option>)}
+                    </select>
+                  ) : (
+                    <input type="number" min="1" step="1" required={!editing} disabled={editing} value={values.seasonNumber} placeholder="Ex.: 1"
+                      onChange={(e) => void selectSeason(e.target.value)} />
+                  )}
+                  <small>{editing ? 'Para registrar outra temporada, crie um novo título.' : seasonBusy ? 'Carregando temporada no TMDB...' : 'Quando a TMDB disponibilizar, usamos a capa específica da temporada.'}</small>
+                </label>
+              </>}
               {values.kind === 'book' && <>
                 <label className="media-field"><span>Formato</span><select value={values.format} onChange={(event) => change('format', event.target.value as FormValues['format'])}>
                   <option value="">Não informado</option><option value="physical">Físico</option><option value="ebook">E-book</option><option value="audiobook">Audiobook</option>
                 </select></label>
                 <label className="media-field"><span>Total de páginas</span><input type="number" min="1" step="1" value={values.totalPages} onChange={(event) => change('totalPages', event.target.value)} /></label>
-                <label className="media-field"><span>Página atual</span><input type="number" min="0" step="1" value={values.currentPage} onChange={(event) => change('currentPage', event.target.value)} /></label>
+                {values.format === 'ebook' ? (
+                  <label className="media-field"><span>Progresso no e-book (%)</span>
+                    <input type="number" min="0" max="100" step="1" value={values.ebookPercent} placeholder="Ex.: 35" onChange={(e) => change('ebookPercent', e.target.value)} />
+                    <small>Percentual indicado pelo leitor digital, mesmo sem número de página.</small>
+                  </label>
+                ) : (
+                  <label className="media-field"><span>Página atual</span><input type="number" min="0" step="1" value={values.currentPage} onChange={(event) => change('currentPage', event.target.value)} /></label>
+                )}
               </>}
               {values.kind === 'movie' && <label className="media-field"><span>Duração (minutos)</span>
                 <input type="number" min="1" step="1" value={values.durationMinutes} onChange={(event) => change('durationMinutes', event.target.value)} /></label>}
               {values.kind === 'series' && <>
-                <label className="media-field"><span>Temporada atual</span><input type="number" min="1" step="1" value={values.currentSeason} onChange={(event) => change('currentSeason', event.target.value)} /></label>
-                <label className="media-field"><span>Episódio atual</span><input type="number" min="1" step="1" value={values.currentEpisode} onChange={(event) => change('currentEpisode', event.target.value)} /></label>
-                <label className="media-field"><span>Total de temporadas</span><input type="number" min="1" step="1" value={values.totalSeasons} onChange={(event) => change('totalSeasons', event.target.value)} /></label>
-                <label className="media-field"><span>Total de episódios</span><input type="number" min="1" step="1" value={values.totalEpisodes} onChange={(event) => change('totalEpisodes', event.target.value)} /></label>
+                <label className="media-field"><span>Episódios concluídos nesta temporada</span>
+                  <input type="number" min="0" step="1" value={values.currentEpisode} placeholder="Ex.: 3" onChange={(e) => change('currentEpisode', e.target.value)} /></label>
+                <label className="media-field"><span>Total de episódios da temporada</span>
+                  <input type="number" min="1" step="1" value={values.totalEpisodes} placeholder="Ex.: 10" onChange={(e) => change('totalEpisodes', e.target.value)} /></label>
               </>}
+              {(values.kind === 'movie' || values.kind === 'series') && (values.status === 'in_progress' || values.status === 'paused') &&
+                <label className="media-field"><span>{values.kind === 'movie' ? 'Parei no filme em' : 'Parei no episódio em'} (HH:MM:SS)</span>
+                  <input type="text" inputMode="numeric" pattern="[0-9]{1,2}:[0-9]{2}:[0-9]{2}" placeholder="00:48:40" value={values.pausedAt}
+                    onChange={(e) => change('pausedAt', e.target.value)} />
+                  <small>É a posição da reprodução, não a duração total. Ex.: 00:48:40.</small>
+                </label>}
               <label className="media-field media-field--wide"><span>Minha opinião / anotações</span>
                 <textarea rows={5} value={values.notes} placeholder="O que essa história te fez sentir?" onChange={(event) => change('notes', event.target.value)} /></label>
             </div>
