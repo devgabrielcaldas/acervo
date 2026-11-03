@@ -1,10 +1,12 @@
-import {googleBooksResults,mergeGoogleAndOpenLibrary,openLibraryResults,portugueseWorkEdition,tmdbDetail,tmdbResults,validateCoverUrl} from './catalog-utils.ts';
+import {bookSearchPlan,googleBooksResults,mergeGoogleAndOpenLibrary,openLibraryResults,openLibraryIsbnEdition,portugueseWorkEdition,rankBookResults,tmdbDetail,tmdbResults,tmdbSeasonDetails,validateCoverUrl} from './catalog-utils.ts';
 import type {CatalogResult,MediaKind} from './catalog-utils.ts';
 
 const DEFAULT_ORIGINS=['http://localhost:5173','http://127.0.0.1:5173','https://livrosfilmesgabriel.netlify.app'];
 const ORIGINS=new Set([...DEFAULT_ORIGINS,...(Deno.env.get('ACERVO_ALLOWED_ORIGINS')??'').split(',').map(s=>s.trim()).filter(Boolean)]);
 const SUPABASE_URL=Deno.env.get('SUPABASE_URL')??'';
 const SUPABASE_API_KEY=Deno.env.get('SUPABASE_ANON_KEY')??Deno.env.get('SUPABASE_PUBLISHABLE_KEY')??'';
+const GOOGLE_BOOKS_API_KEY =
+  Deno.env.get('GOOGLE_BOOKS_API_KEY') ?? '';
 const TMDB_TOKEN=Deno.env.get('TMDB_READ_ACCESS_TOKEN')??'';
 const VERSION='catalog-v1';
 
@@ -17,6 +19,15 @@ function json(body:unknown,status:number,origin:string|null):Response {
   return new Response(JSON.stringify(body),{status,headers:{...cors(origin),'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'}});
 }
 async function getJson(url:URL,headers?:HeadersInit):Promise<unknown> {
+
+if (
+  url.hostname === 'www.googleapis.com' &&
+  url.pathname === '/books/v1/volumes' &&
+  GOOGLE_BOOKS_API_KEY
+) {
+  url.searchParams.set('key', GOOGLE_BOOKS_API_KEY);
+}
+
   const response=await fetch(url,{headers,signal:AbortSignal.timeout(9500),redirect:'error'});
   if (!response.ok) throw new Error(`O catálogo respondeu ${response.status}.`);
   const len=Number(response.headers.get('content-length')??0);
@@ -33,50 +44,76 @@ async function search(kind:MediaKind,query:string):Promise<{results:CatalogResul
     url.searchParams.set('query',query);url.searchParams.set('include_adult','false');if(kind==='movie')url.searchParams.set('region','BR');
     const data=await getJson(url,tmdbHeaders());return {results:tmdbResults(data,kind),warnings:[]};
   }
-  const books=new URL('https://www.googleapis.com/books/v1/volumes');
-  books.searchParams.set('q',`intitle:"${query}"`);
-  books.searchParams.set('langRestrict','pt');
-  books.searchParams.set('country','BR');
-  books.searchParams.set('maxResults','15');
-  books.searchParams.set('printType','books');
-  const fields='key,title,author_name,first_publish_year,cover_i,number_of_pages_median,subject,editions,editions.key,editions.title,editions.language,editions.cover_i,editions.publish_date,editions.number_of_pages,editions.isbn_13';
-  const open=new URL('https://openlibrary.org/search.json');
-  open.searchParams.set('title',query);
-  open.searchParams.set('lang','pt');
-  open.searchParams.set('limit','6');
-  open.searchParams.set('fields',fields);
-  // O parâmetro lang=pt sozinho NÃO exclui edições estrangeiras. O filtro
-  // language:por recupera trabalhos que também possuem edições em português.
-  const openPt=new URL('https://openlibrary.org/search.json');
-  openPt.searchParams.set('q',`title:"${query.replace(/"/g,'')}" language:por`);
-  openPt.searchParams.set('lang','pt');
-  openPt.searchParams.set('limit','6');
-  openPt.searchParams.set('fields',fields);
-  const headers={'User-Agent':'AcervoCatalog/1.1 (personal reading collection)'};
-  const [a,b,c]=await Promise.allSettled([getJson(books),getJson(open,headers),getJson(openPt,headers)]);
-  const warnings:string[]=[];
-  if(a.status==='rejected')warnings.push('Google Books indisponível.');
-  if(b.status==='rejected'&&c.status==='rejected')warnings.push('Open Library indisponível.');
-  if(a.status==='rejected'&&b.status==='rejected'&&c.status==='rejected')throw new Error('Não foi possível consultar os catálogos de livros agora. Tente novamente mais tarde.');
-  const google=a.status==='fulfilled'?googleBooksResults(a.value):[];
-  const olpt=c.status==='fulfilled'?openLibraryResults(c.value):[];
-  const ol=b.status==='fulfilled'?openLibraryResults(b.value):[];
-  // Se a busca foi pelo título original, localizar o título da edição portuguesa
-  // no conjunto de edições da obra, em vez de inventar uma tradução.
-  const unresolved=[...olpt,...ol].filter(x=>x.language!=='pt').slice(0,2);
-  if (!google.some(x=>x.language==='pt') && ![...olpt,...ol].some(x=>x.language==='pt') && unresolved.length) {
-    const resolved=await Promise.allSettled(unresolved.map(async item=>{
-      const u=new URL(`https://openlibrary.org/works/${item.id}/editions.json`);
-      u.searchParams.set('limit','100');
-      return portugueseWorkEdition(await getJson(u,headers),item);
+  const plan = bookSearchPlan(query);
+  const headers = {'User-Agent': 'AcervoCatalog/1.2 (personal reading collection)'};
+  // Duas chamadas principais: evita sobrecarregar provedores a cada busca.
+  const [googleMain, openMain] = await Promise.allSettled([
+    getJson(plan.google), getJson(plan.open, headers),
+  ]);
+  const warnings: string[] = [];
+  let google = googleMain.status === 'fulfilled' ? googleBooksResults(googleMain.value) : [];
+  let library = openMain.status === 'fulfilled' ? openLibraryResults(openMain.value) : [];
+  let googleFailed = googleMain.status === 'rejected';
+  let openFailed = openMain.status === 'rejected';
+
+  // Se não há edição em português ou a busca é vazia, ampliar sem inventar títulos.
+  // Nunca repetir a chamada que já falhou por limite de serviço.
+  const needMore = ![...google,...library].some(item => item.language === 'pt') ||
+    (google.length === 0 && library.length === 0);
+  if (needMore) {
+    const tasks: Promise<unknown>[] = [];
+    const tags: ('google'|'open')[] = [];
+    if (!googleFailed) { tasks.push(getJson(plan.googlePt)); tags.push('google'); }
+    // Não repetir consultas idênticas (p. ex. certos ISBNs).
+    if (!openFailed && plan.open.toString() !== plan.openBroad.toString()) {
+      tasks.push(getJson(plan.openBroad, headers)); tags.push('open');
+    }
+    const extra = await Promise.allSettled(tasks);
+    extra.forEach((result, index) => {
+      if (result.status !== 'fulfilled') return;
+      if (tags[index] === 'google') google = [...google,...googleBooksResults(result.value)];
+      else library = [...library,...openLibraryResults(result.value)];
+    });
+  }
+
+  if (googleMain.status === 'rejected') {
+    console.warn('Busca de livros: Google Books falhou:', googleMain.reason instanceof Error ? googleMain.reason.message : 'erro desconhecido');
+    warnings.push('Google Books temporariamente indisponível.');
+  }
+  if (openMain.status === 'rejected') {
+    console.warn('Busca de livros: Open Library falhou:', openMain.reason instanceof Error ? openMain.reason.message : 'erro desconhecido');
+    warnings.push('Open Library temporariamente indisponível.');
+  }
+  if (googleFailed && openFailed) {
+    throw new Error('Os dois catálogos de livros não responderam. Tente novamente mais tarde.');
+  }
+
+  // Open Library pode ter apenas o título original; procurar a edição portuguesa.
+  const toResolve = library.filter(item => item.language !== 'pt').slice(0, 2);
+  if (![...google,...library].some(item => item.language === 'pt') && toResolve.length) {
+    const editions = await Promise.allSettled(toResolve.map(async item => {
+      const url = new URL(`https://openlibrary.org/works/${item.id}/editions.json`);
+      url.searchParams.set('limit', '100');
+      return portugueseWorkEdition(await getJson(url, headers), item);
     }));
-    for(const value of resolved)if(value.status==='fulfilled'&&value.value)olpt.unshift(value.value);
+    editions.forEach(result => {
+      if (result.status === 'fulfilled' && result.value) library.unshift(result.value);
+    });
   }
-  const results=mergeGoogleAndOpenLibrary(google,[...olpt,...ol]);
-  if (results.length && !results.some(x=>x.language==='pt')) {
-    warnings.push('Não foi encontrada uma edição em português para essa pesquisa. Confira o título antes de selecionar ou cadastre manualmente.');
+  let results = rankBookResults(mergeGoogleAndOpenLibrary(google, library), query);
+  // Caso o ISBN não tenha sido encontrado na busca indexada, consultar a edição
+  // diretamente na Open Library. Um 404 não invalida as outras fontes.
+  if (!results.length && plan.isbn && !openFailed) {
+    try {
+      const direct = new URL(`https://openlibrary.org/isbn/${plan.isbn}.json`);
+      const edition = openLibraryIsbnEdition(await getJson(direct, headers), plan.isbn);
+      if (edition) results = [edition];
+    } catch { /* Edição não catalogada ou provedor temporariamente indisponível. */ }
   }
-  return {results,warnings};
+  if (results.length && !results.some(item => item.language === 'pt')) {
+    warnings.push('Não encontramos uma edição em português confirmada. Confira a edição antes de usar os dados.');
+  }
+  return {results, warnings};
 }
 async function details(kind:MediaKind,selected:CatalogResult):Promise<CatalogResult> {
   if(kind==='book') return selected;
@@ -85,6 +122,11 @@ async function details(kind:MediaKind,selected:CatalogResult):Promise<CatalogRes
   if(kind==='movie')url.searchParams.set('append_to_response','credits');
   const data=await getJson(url,tmdbHeaders());
   return {...selected,...tmdbDetail(data,kind)};
+}
+async function seasonDetails(tmdbId:number,seasonNumber:number) {
+  if (!Number.isSafeInteger(tmdbId) || tmdbId < 1 || !Number.isSafeInteger(seasonNumber) || seasonNumber < 1 || seasonNumber > 100) throw new Error('Série ou temporada inválida.');
+  const data=await getJson(tmdb(`tv/${tmdbId}/season/${seasonNumber}`),tmdbHeaders());
+  return tmdbSeasonDetails(data,seasonNumber);
 }
 async function imageDownload(input:unknown,origin:string|null):Promise<Response> {
   let url=validateCoverUrl(input);
@@ -137,6 +179,12 @@ Deno.serve(async(request:Request)=>{
     if(action==='image')return await imageDownload(parsed.url,origin);
     const kind=parsed.kind;
     if(kind!=='book'&&kind!=='movie'&&kind!=='series')return json({error:'Categoria inválida.'},400,origin);
+    if(action==='season') {
+      if (kind!=='series') return json({error:'Temporada disponível apenas para séries.'},400,origin);
+      const tmdbId=parsed.tmdbId,seasonNumber=parsed.seasonNumber;
+      if (!Number.isSafeInteger(tmdbId) || (tmdbId as number)<1 || !Number.isSafeInteger(seasonNumber) || (seasonNumber as number)<1 || (seasonNumber as number)>100) return json({error:'ID ou temporada inválida.'},400,origin);
+      return json({season:await seasonDetails(tmdbId as number,seasonNumber as number)},200,origin);
+    }
     if(action==='search'){
       const query=typeof parsed.query==='string'?parsed.query.trim():'';
       if(query.length<3||query.length>100)return json({error:'Digite entre 3 e 100 caracteres.'},400,origin);
