@@ -44,3 +44,10 @@ supabase/.temp/
 
 # Documentacoes temporarias das atualizacoes
 LEIA-ME*.md
+
+# Instaladores temporarios do Acervo
+/instalar_finalizacao.py
+/instalar_modal_progresso.py
+
+# Copias auxiliares das atualizacoes
+/nova_versao/
