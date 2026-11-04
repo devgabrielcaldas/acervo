@@ -273,3 +273,32 @@
   .bottom-nav__link { font-size:8px; gap:3px; }
   .bottom-nav__link svg { width:18px; height:18px; }
 }
+
+/* ACERVO: titulo de temporada em duas linhas nos cards */
+.media-card__title--season {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  -webkit-line-clamp: unset;
+  overflow: visible;
+}
+.media-card__series-name {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  max-width: 100%;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+.media-card__season-label {
+  display: block;
+  width: 100%;
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.3;
+  font-weight: 650;
+}
+@media (max-width: 590px) {
+  .media-card__season-label { font-size: 10px; }
+}

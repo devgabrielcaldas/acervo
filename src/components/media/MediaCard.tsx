@@ -5,6 +5,7 @@ import { RatingStars } from './RatingStars';
 import { MediaProgress } from './MediaProgress';
 import { categoryLabels, describeCategoryStatus } from '../../utils/mediaLabels';
 import type { MediaRecord } from '../../types/media';
+import { getSeriesCardTitle } from '../../utils/cardSeasonTitle';
 
 export function MediaCard({ item, onFavorite, busy = false }: {
   item: MediaRecord;
@@ -12,6 +13,7 @@ export function MediaCard({ item, onFavorite, busy = false }: {
   busy?: boolean;
 }) {
   const subtitle = item.kind === 'book' ? item.author : item.kind === 'movie' ? item.director : undefined;
+  const seasonCardTitle = getSeriesCardTitle(item);
   return (
     <article className="media-card">
       <div className="media-card__visual">
@@ -34,7 +36,18 @@ export function MediaCard({ item, onFavorite, busy = false }: {
         <span className={`media-card__status media-card__status--${item.status}`}>
           <span aria-hidden="true" />{describeCategoryStatus(item.kind, item.status)}
         </span>
-        <Link to={`/colecao/${item.id}`} className="media-card__title">{item.title}</Link>
+        <Link
+          to={`/colecao/${item.id}`}
+          className={`media-card__title${seasonCardTitle ? ' media-card__title--season' : ''}`}
+          aria-label={seasonCardTitle ? `${seasonCardTitle.name}, temporada ${seasonCardTitle.season}` : undefined}
+        >
+          {seasonCardTitle ? (
+            <>
+              <span className="media-card__series-name">{seasonCardTitle.name}</span>
+              <span className="media-card__season-label">Temp. {seasonCardTitle.season}</span>
+            </>
+          ) : item.title}
+        </Link>
         <p className="media-card__subtitle">{subtitle || (item.releaseYear ? `Lançamento: ${item.releaseYear}` : categoryLabels[item.kind])}</p>
         <RatingStars rating={item.rating} />
         <MediaProgress item={item} />
