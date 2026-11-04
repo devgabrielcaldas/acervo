@@ -388,8 +388,8 @@ export function MediaFormPage() {
                   <option value="">Não informado</option><option value="physical">Físico</option><option value="ebook">E-book</option><option value="audiobook">Audiobook</option>
                 </select></label>
                 <label className="media-field"><span>Total de páginas</span><input type="number" min="1" step="1" value={values.totalPages} onChange={(event) => change('totalPages', event.target.value)} /></label>
-                {values.format === 'ebook' ? (
-                  <label className="media-field"><span>Progresso no e-book (%)</span>
+                {(values.format === 'ebook' || values.format === 'audiobook') ? (
+                  <label className="media-field"><span>Progresso da leitura (%)</span>
                     <input type="number" min="0" max="100" step="1" value={values.ebookPercent} placeholder="Ex.: 35" onChange={(e) => change('ebookPercent', e.target.value)} />
                     <small>Percentual indicado pelo leitor digital, mesmo sem número de página.</small>
                   </label>

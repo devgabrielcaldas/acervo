@@ -3,6 +3,7 @@ import { BookOpenCheck, PauseCircle, Pencil, Plus, PlayCircle } from 'lucide-rea
 import { Link } from 'react-router';
 import { MediaCard } from '../components/media/MediaCard';
 import { CompleteMediaDialog } from '../components/media/CompleteMediaDialog';
+import { QuickProgressDialog } from '../components/media/QuickProgressDialog';
 import { listMedia, updateMedia } from '../services/mediaRepository';
 import type { DateOnly, MediaRecord } from '../types/media';
 
@@ -12,8 +13,8 @@ export function InProgressPage() {
   const [error, setError] = useState('');
   const [busyId, setBusyId] = useState<string>();
   const [completing, setCompleting] = useState<MediaRecord | null>(null);
+  const [editingProgress, setEditingProgress] = useState<MediaRecord | null>(null);
 
-  async function refresh() { setItems(await listMedia()); }
   useEffect(() => {
     let alive = true;
     void listMedia().then(records => { if (alive) setItems(records); })
@@ -24,7 +25,12 @@ export function InProgressPage() {
 
   async function update(item: MediaRecord, change: Record<string, unknown>) {
     setBusyId(item.id);setError('');
-    try { await updateMedia(item.id, { ...item, ...change }); await refresh();return null; }
+    try {
+      const saved = await updateMedia(item.id, { ...item, ...change });
+      setItems(previous => previous.map(record => record.id === saved.id ? saved : record)
+        .sort((a,b) => b.updatedAt.localeCompare(a.updatedAt)));
+      return null;
+    }
     catch (reason) { const msg=reason instanceof Error?reason.message:'Erro ao salvar.';setError(msg);return msg; }
     finally { setBusyId(undefined); }
   }
@@ -37,7 +43,7 @@ export function InProgressPage() {
         {records.map(item => <div className="acervo-progress-item" key={item.id}>
           <MediaCard item={item} busy={busyId === item.id} onFavorite={record => { void update(record,{favorite:!record.favorite}); }} />
           <div className="acervo-progress-actions">
-            <Link className="btn btn--outline" to={`/editar/${item.id}`}><Pencil size={14}/> Atualizar</Link>
+            <button type="button" className="btn btn--outline" disabled={Boolean(busyId)} onClick={() => setEditingProgress(item)}><Pencil size={14}/> Atualizar</button>
             <button type="button" disabled={Boolean(busyId)} className="btn btn--outline"
               onClick={() => { void update(item,{status:item.status==='paused'?'in_progress':'paused'}); }}>
               {item.status === 'paused'?<PlayCircle size={14}/>:<PauseCircle size={14}/>} {item.status === 'paused'?'Retomar':'Pausar'}
@@ -61,6 +67,9 @@ export function InProgressPage() {
       : <div className="collection-empty"><BookOpenCheck size={35} /><h2>Nenhuma história em andamento</h2>
           <p>Comece um livro, filme ou uma temporada para acompanhar seu progresso aqui.</p>
           <Link className="btn btn--primary" to="/colecao">Ir para a coleção</Link></div>}
+    {editingProgress && <QuickProgressDialog key={editingProgress.id} item={editingProgress}
+      onClose={() => setEditingProgress(null)}
+      onSave={async patch => update(editingProgress, patch)} />}
     {completing && <CompleteMediaDialog item={completing} onClose={() => setCompleting(null)}
       onComplete={async (date:DateOnly) => update(completing,{status:'completed',completedOn:date})} />}
   </div>;

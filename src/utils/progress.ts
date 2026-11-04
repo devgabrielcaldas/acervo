@@ -24,9 +24,9 @@ export function mediaProgress(item: MediaRecord): ProgressData | undefined {
   let value: number | undefined;
   let description = '';
   if (item.kind === 'book') {
-    if (item.format === 'ebook' && item.ebookPercent !== undefined) {
+    if ((item.format === 'ebook' || item.format === 'audiobook') && item.ebookPercent !== undefined) {
       value = item.ebookPercent;
-      description = `E-book · ${value}%`;
+      description = `${item.format === 'audiobook' ? 'Audiolivro' : 'E-book'} · ${value}%`;
     } else if (item.format !== 'ebook' && item.format !== 'audiobook' && item.totalPages && item.currentPage !== undefined) {
       value = (item.currentPage / item.totalPages) * 100;
       description = `Página ${item.currentPage} de ${item.totalPages}`;

@@ -77,7 +77,7 @@ function validateInput(input: MediaInput): void {
     checkedInteger(input.pausedAtSeconds, 'Tempo de pausa');
     if (input.pausedAtSeconds !== undefined && input.pausedAtSeconds > 359999) throw new Error('Tempo de pausa inválido.');
     if (input.seriesTitle !== undefined && input.seriesTitle.trim().length === 0) throw new Error('O título da série não pode ser vazio.');
-    checkedInteger(input.currentEpisode, 'Episódio atual', 1);
+    checkedInteger(input.currentEpisode, 'Episódios concluídos', 0);
     checkedInteger(input.totalSeasons, 'Total de temporadas', 1);
     checkedInteger(input.totalEpisodes, 'Total de episódios', 1);
     if (input.currentEpisode !== undefined && input.totalEpisodes !== undefined && input.currentEpisode > input.totalEpisodes) throw new Error('O progresso não pode ultrapassar os episódios da temporada.');
