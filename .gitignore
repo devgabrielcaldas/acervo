@@ -51,3 +51,6 @@ LEIA-ME*.md
 
 # Copias auxiliares das atualizacoes
 /nova_versao/
+
+# Instalador temporario dos cards de temporadas
+/instalar_cards_temporada.py
