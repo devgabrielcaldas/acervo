@@ -53,5 +53,5 @@ export function useMediaLibrary() {
   const changeStatus = useCallback((item: MediaRecord, status: MediaStatus, completedOn?: DateOnly) =>
     save(item, { status, completedOn: status === 'completed' ? completedOn : undefined }), [save]);
 
-  return { items, loading, error, busyId, toggleFavorite, changeStatus };
+  return { items, loading, error, busyId, toggleFavorite, changeStatus, refresh };
 }

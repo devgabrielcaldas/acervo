@@ -25,6 +25,11 @@ export function QuickProgressDialog({ item, onClose, onSave }: Props) {
   const ref = useRef<HTMLElement>(null);
   const titleId = useId();
   const descriptionId = useId();
+  // Calculado ao abrir o modal, nunca durante a renderização.
+  const [today] = useState(() => {
+    const date = new Date();
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  });
 
   useEffect(() => {
     const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -162,7 +167,7 @@ export function QuickProgressDialog({ item, onClose, onSave }: Props) {
               </label>
               {values.finish && <div className="acervo-quick-finish__details">
                 <label className="media-field"><span>Data real de conclusão <b>*</b></span>
-                  <input type="date" required min={item.startedOn || undefined} max={(() => { const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })()}
+                  <input type="date" required min={item.startedOn || undefined} max={today}
                     value={values.completedOn} disabled={saving}
                     onChange={e => change('completedOn', e.target.value)}/>
                   <small>Informe o dia em que terminou. Ele será usado no histórico e nas metas anuais.</small>

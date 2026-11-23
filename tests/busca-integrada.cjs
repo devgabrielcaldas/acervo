@@ -4,13 +4,13 @@ const vm=require('node:vm');
 const ts=require('typescript');
 const root='supabase/functions/catalog/';
 const transpile=f=>ts.transpileModule(fs.readFileSync(root+f,'utf8'),{fileName:f,compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
-function use(code,context,req){const m={exports:{}};vm.runInNewContext(code,{...context,module:m,exports:m.exports,require:req});return m.exports;}
+function loadFixture(code,context,req){const m={exports:{}};vm.runInNewContext(code,{...context,module:m,exports:m.exports,require:req});return m.exports;}
 const sdk={URL,URLSearchParams,Request,Response,Headers,AbortSignal,Uint8Array,Date,Set,Promise,JSON,String,Array,Number,RegExp,Object,TextEncoder,TextDecoder,console};
-const utils=use(transpile('catalog-utils.ts'),sdk,()=>{throw Error('not imported')});
+const utils=loadFixture(transpile('catalog-utils.ts'),sdk,()=>{throw Error('not imported')});
 const calls=[];let handle;
 const env={SUPABASE_URL:'https://test.supabase.co',SUPABASE_ANON_KEY:'fake-public-key',TMDB_READ_ACCESS_TOKEN:'fake-token'};
 const Deno={env:{get:k=>env[k]},serve:f=>{handle=f}};
-const fetch=async(input,options)=>{
+const fetch=async(input,_options)=>{
   const u=new URL(String(input));calls.push(u.pathname+u.search);
   if(u.pathname==='/auth/v1/user')return Response.json({id:'user-1'});
   if(u.hostname==='www.googleapis.com')return Response.json({items:[{id:'en-123',volumeInfo:{title:'Harry Potter and the Deathly Hallows',language:'en',authors:['J. K. Rowling'],categories:["children's books",'Fantasy fiction','the Elder Wand','dementors'],publishedDate:'2007-01-01',industryIdentifiers:[{type:'ISBN_13',identifier:'9780545010221'}],imageLinks:{thumbnail:'https://books.google.com/books/content?id=abc'}}}]});
@@ -26,7 +26,7 @@ const fetch=async(input,options)=>{
   if(u.hostname==='covers.openlibrary.org')return new Response(new Uint8Array(700).fill(13),{headers:{'content-type':'image/jpeg'}});
   throw Error('Mock unexpected fetch: '+u);
 };
-use(transpile('index.ts'),{...sdk,Deno,fetch},p=>{if(p==='./catalog-utils.ts')return utils;throw Error('unknown import '+p)});
+loadFixture(transpile('index.ts'),{...sdk,Deno,fetch},p=>{if(p==='./catalog-utils.ts')return utils;throw Error('unknown import '+p)});
 async function call(body){const response=await handle(new Request('https://test.supabase.co/functions/v1/catalog',{method:'POST',headers:{origin:'https://livrosfilmesgabriel.netlify.app',authorization:'Bearer demo.jwt','content-type':'application/json'},body:JSON.stringify(body)}));return {status:response.status,data:await response.json()};}
 (async()=>{
 const {status,data}=await call({action:'search',kind:'book',query:'Harry Potter and the Deathly Hallows'});

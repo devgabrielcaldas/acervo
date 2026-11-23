@@ -1,0 +1,24 @@
+/*
+ * Acervo · foco sem zoom automatico no Safari do iPhone.
+ * Importar por ultimo em src/main.tsx. Nunca desabilitar pinch-to-zoom:
+ * o usuario continua podendo ampliar a pagina manualmente.
+ *
+ * O iOS Safari costuma ampliar a pagina quando um campo focado tem texto
+ * menor que 16px. Usamos 17px como pequena margem para arredondamentos.
+ */
+@media screen and (max-width: 900px) {
+  input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='hidden']):not([type='file']):not([type='button']):not([type='submit']):not([type='reset']),
+  select,
+  textarea,
+  [contenteditable='true'] {
+    font-size: 17px !important;
+  }
+
+  /* Garante que o texto editavel nao estoure os cards/formularios no mobile. */
+  input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='hidden']):not([type='file']),
+  select,
+  textarea {
+    min-width: 0;
+    max-width: 100%;
+  }
+}

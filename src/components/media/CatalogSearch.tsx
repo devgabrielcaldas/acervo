@@ -26,17 +26,18 @@ export function CatalogSearch({kind,query,enabled,onSelect}:CatalogSearchProps) 
 
   useEffect(()=>{
     const request=++requestId.current;
+    let cancelled=false;
     if(!enabled||lookup.length<3){return;}
     const timer=window.setTimeout(()=>{
       void searchCatalog(kind,lookup).then(({results,warnings})=>{
-        if(request!==requestId.current)return;
+        if(cancelled||request!==requestId.current)return;
         setResults(results);setWarnings(warnings??[]);setResolvedQuery(`${kind}:${lookup}`);setError('');
       }).catch((reason:unknown)=>{
-        if(request!==requestId.current)return;
+        if(cancelled||request!==requestId.current)return;
         setResults([]);setResolvedQuery(`${kind}:${lookup}`);setError(reason instanceof Error?reason.message:'Falha ao pesquisar.');
-      }).finally(()=>{if(request===requestId.current)setLoading(false);});
+      }).finally(()=>{if(!cancelled&&request===requestId.current)setLoading(false);});
     },450);
-    return()=>{window.clearTimeout(timer);requestId.current++;};
+    return()=>{cancelled=true;window.clearTimeout(timer);};
   },[kind,lookup,enabled]);
 
   // Consultas em andamento têm indicador somente depois do debounce para evitar piscar.

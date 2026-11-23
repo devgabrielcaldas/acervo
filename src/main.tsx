@@ -22,3 +22,5 @@ createRoot(root).render(
 );
 import './styles/backup.css';
 import './styles/login.css';
+
+import './styles/ios-no-autozoom.css';

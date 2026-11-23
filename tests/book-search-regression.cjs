@@ -20,7 +20,6 @@ function load(name, context, imports={}) {
 }
 const globals={URL,URLSearchParams,Request,Response,Headers,AbortSignal,Uint8Array,Date,Set,Promise,JSON,String,Array,Number,RegExp,Object,TextEncoder,TextDecoder,console};
 const utils=load('catalog-utils.ts',globals);
-const tests={};
 function setup(fetchMock){
   let handle;
   const env={SUPABASE_URL:'https://example.supabase.co',SUPABASE_ANON_KEY:'publishable-key',TMDB_READ_ACCESS_TOKEN:'tmdb-test-key'};
