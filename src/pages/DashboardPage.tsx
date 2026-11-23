@@ -1,3 +1,4 @@
+import { MediaCover } from '../components/media/MediaCover';
 import { useEffect, useState } from 'react';
 import { listMedia } from '../services/mediaRepository';
 import { listAnnualGoals } from '../services/goalsRepository';
@@ -155,7 +156,13 @@ export function DashboardPage() {
           </div>
           {ongoing.length ? <div className="dashboard-mini-list">
             {ongoing.map((item) => <Link key={item.id} to={`/colecao/${item.id}`}>
-              <span className="dashboard-mini-list__icon"><LibraryBig size={17} /></span>
+              <MediaCover
+                className="dashboard-mini-list__cover"
+                kind={item.kind}
+                title={item.title}
+                mediaId={item.id}
+                coverId={item.coverId}
+              />
               <span><strong>{item.title}</strong><small>{describeCategoryStatus(item.kind, item.status)}</small></span><ArrowRight size={16} />
             </Link>)}
           </div> : <div className="empty-state">
@@ -175,7 +182,13 @@ export function DashboardPage() {
           </div>
           {wishlist.length ? <div className="dashboard-mini-list">
             {wishlist.map((item) => <Link key={item.id} to={`/colecao/${item.id}`}>
-              <span className="dashboard-mini-list__icon"><Bookmark size={17} /></span>
+              <MediaCover
+                className="dashboard-mini-list__cover"
+                kind={item.kind}
+                title={item.title}
+                mediaId={item.id}
+                coverId={item.coverId}
+              />
               <span><strong>{item.title}</strong><small>{describeCategoryStatus(item.kind, item.status)}</small></span><ArrowRight size={16} />
             </Link>)}
           </div> : <div className="empty-state">
