@@ -54,3 +54,6 @@ LEIA-ME*.md
 
 # Instalador temporario dos cards de temporadas
 /instalar_cards_temporada.py
+
+# Pacote temporario de atualizacao do Acervo
+/.acervo-update/

@@ -1,0 +1,9 @@
+/* O modal de início reutiliza os tokens e o diálogo acessível do Acervo. */
+.acervo-start-dialog .acervo-dialog__actions { margin-top: 20px; }
+.acervo-start-dialog .acervo-quick-fields { min-inline-size: 0; }
+.acervo-start-dialog .acervo-quick-fields input,
+.acervo-start-dialog .acervo-quick-fields select { max-width: 100%; box-sizing: border-box; }
+@media (max-width: 780px) {
+  .acervo-start-dialog input:not([type='checkbox']),
+  .acervo-start-dialog select { font-size: 16px; }
+}

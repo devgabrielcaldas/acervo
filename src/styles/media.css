@@ -302,3 +302,19 @@
 @media (max-width: 590px) {
   .media-card__season-label { font-size: 10px; }
 }
+
+/* ACERVO_UX_NOV2026: foco de input no iPhone não deve ampliar a página. */
+@media screen and (max-width: 780px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select, textarea, [contenteditable="true"] {
+    font-size: 16px !important;
+  }
+  .media-form-panel, .media-form-layout, .media-fields-grid, .media-kind-options,
+  .collection-filters, .catalog-search { min-width: 0; max-width: 100%; }
+  .media-kind { min-width: 0; }
+}
+/* Botão Iniciar no card da coleção; não muda altura da capa. */
+.acervo-collection-entry { min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.acervo-collection-entry > .media-card { width: 100%; }
+.acervo-collection-start { width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 40px; font-size: 12px; }
+@media (max-width: 590px) { .acervo-collection-start { font-size: 12px; min-height: 39px; } }

@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ArrowRight, BookOpen, CalendarDays, Film, LibraryBig, Plus, Search, SlidersHorizontal, Tv, UserRound } from 'lucide-react';
+import { ArrowRight, BookOpen, CalendarDays, Film, LibraryBig, Play, Plus, Search, SlidersHorizontal, Tv, UserRound } from 'lucide-react';
 import { Link } from 'react-router';
 import { MediaCard } from '../components/media/MediaCard';
+import { StartMediaDialog } from '../components/media/StartMediaDialog';
+import { getMediaError } from '../hooks/useMediaLibrary';
+
 import { listMedia, updateMedia } from '../services/mediaRepository';
 import type { MediaCategory, MediaRecord, MediaStatus } from '../types/media';
 import { statusLabels } from '../utils/mediaLabels';
@@ -34,6 +37,7 @@ export function CollectionPage() {
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<SortMode>('recent');
   const [busyId, setBusyId] = useState<string>();
+  const [starting, setStarting] = useState<MediaRecord | null>(null);
 
   const refresh = useCallback(async () => {
     try {
@@ -220,7 +224,11 @@ export function CollectionPage() {
         <div className="collection-empty" role="status">Carregando sua coleção...</div>
       ) : visible.length ? (
         <div className="media-grid">
-          {visible.map((item) => <MediaCard key={item.id} item={item} busy={busyId === item.id} onFavorite={(selected) => void toggleFavorite(selected)} />)}
+          {visible.map((item) => <div className="acervo-collection-entry" key={item.id}>
+            <MediaCard item={item} busy={busyId === item.id} onFavorite={(selected) => void toggleFavorite(selected)} />
+            {item.status === 'wishlist' && <button type="button" className="btn btn--outline acervo-collection-start" disabled={Boolean(busyId)}
+              onClick={() => setStarting(item)}><Play size={15} aria-hidden="true" /> Iniciar</button>}
+          </div>)}
         </div>
       ) : (
         <div className="collection-empty">
@@ -231,6 +239,11 @@ export function CollectionPage() {
             : <Link className="btn btn--primary" to="/novo"><Plus size={17} /> Adicionar primeiro título</Link>}
         </div>
       )}
+      {starting && <StartMediaDialog key={starting.id} item={starting} onClose={() => setStarting(null)}
+        onSave={async patch => {
+          try { await updateMedia(starting.id, { ...starting, ...patch }); await refresh(); return null; }
+          catch (reason) { return getMediaError(reason); }
+        }} />}
     </div>
   );
 }

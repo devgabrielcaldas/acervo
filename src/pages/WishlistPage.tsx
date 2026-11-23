@@ -4,6 +4,10 @@ import { Link } from 'react-router';
 import { CategoryTabs } from '../components/media/CategoryTabs';
 import type { CategoryFilter } from '../components/media/CategoryTabs';
 import { CompleteMediaDialog } from '../components/media/CompleteMediaDialog';
+import { StartMediaDialog } from '../components/media/StartMediaDialog';
+import { getMediaError } from '../hooks/useMediaLibrary';
+import { updateMedia } from '../services/mediaRepository';
+
 import { MediaCard } from '../components/media/MediaCard';
 import { useMediaLibrary } from '../hooks/useMediaLibrary';
 import type { MediaRecord, WishPriority } from '../types/media';
@@ -14,12 +18,13 @@ type WishlistSort = 'priority' | 'title' | 'recent';
 const priorityScore: Record<WishPriority, number> = { high: 3, medium: 2, low: 1 };
 
 export function WishlistPage() {
-  const { items, loading, error, busyId, toggleFavorite, changeStatus } = useMediaLibrary();
+  const { items, loading, error, busyId, toggleFavorite, changeStatus, refresh } = useMediaLibrary();
   const [kind, setKind] = useState<CategoryFilter>('all');
   const [priority, setPriority] = useState<PriorityFilter>('all');
   const [sort, setSort] = useState<WishlistSort>('priority');
   const [search, setSearch] = useState('');
   const [completing, setCompleting] = useState<MediaRecord | null>(null);
+  const [starting, setStarting] = useState<MediaRecord | null>(null);
 
   const wishlist = useMemo(() => items.filter((item) => item.status === 'wishlist'), [items]);
   const visible = useMemo(() => {
@@ -99,7 +104,7 @@ export function WishlistPage() {
                 <Link to={`/editar/${item.id}`} className="acervo-mini-link">Editar</Link>
               </div>
               <div className="acervo-action-item__buttons">
-                <button type="button" disabled={Boolean(busyId)} onClick={() => { void changeStatus(item, 'in_progress'); }}>
+                <button type="button" disabled={Boolean(busyId)} onClick={() => setStarting(item)}>
                   <Play size={14} /> Começar
                 </button>
                 <button type="button" disabled={Boolean(busyId)} onClick={() => setCompleting(item)}>
@@ -125,8 +130,16 @@ export function WishlistPage() {
       )}
 
       <p className="acervo-help-note"><CalendarCheck2 size={16} /> Ao concluir um título, você escolhe a data real. Ao retirar dos desejos, ele vai para “Pausado”, sem perder informações.</p>
-      {completing && <CompleteMediaDialog item={completing} onClose={() => setCompleting(null)}
-        onComplete={(date) => changeStatus(completing, 'completed', date)} />}
+      {starting && <StartMediaDialog key={starting.id} item={starting} onClose={() => setStarting(null)}
+        onSave={async patch => {
+          try { await updateMedia(starting.id, { ...starting, ...patch }); await refresh(); return null; }
+          catch (reason) { return getMediaError(reason); }
+        }} />}
+      {completing && <CompleteMediaDialog key={completing.id} item={completing} onClose={() => setCompleting(null)}
+        onComplete={async patch => {
+          try { await updateMedia(completing.id, { ...completing, ...patch }); await refresh(); return null; }
+          catch (reason) { return getMediaError(reason); }
+        }} />}
     </div>
   );
 }

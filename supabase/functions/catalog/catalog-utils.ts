@@ -225,22 +225,37 @@ export function mergeGoogleAndOpenLibrary(google: CatalogResult[], open: Catalog
     const key=item.source==='google-books'?`google:${item.id}`:`open-library:${item.id}`;
     if (seen.has(key) || (item.source==='open-library' && google.some(g=>normalized(g.title)===normalized(item.title) && normalized(g.creator??'')===normalized(item.creator??'') && (g.language==='pt'||item.language!=='pt')))) continue;
     seen.add(key);result.push(item);
-    if(result.length>=15)break;
+    if(result.length>=65)break;
   }
   return result;
 }
 
-/** Ordena resultados com título mais próximo da pesquisa antes de outras edições. */
-export function rankBookResults(items: CatalogResult[], query: string): CatalogResult[] {
-  const tokens = normalized(query).split(/[^a-z0-9]+/).filter(token=>token.length>1);
-  const score = (item: CatalogResult) => {
-    const title = normalized(item.title);
-    const matches = tokens.filter(token=>title.includes(token)).length;
-    return (title===normalized(query)?30:0) + (tokens.length ? 12*matches/tokens.length:0) +
-      (item.language==='pt'?50:0) + (item.coverUrl?1:0);
-  };
-  return [...items].sort((a,b)=>score(b)-score(a));
+/** ACERVO_UX_NOV2026: titulo relevante tem prioridade sobre idioma e capa. */
+export function bookTitleMatches(title: string, query: string): boolean {
+  const t = normalized(title).replace(/[^a-z0-9]+/g, ' ').trim();
+  const q = normalized(query).replace(/[^a-z0-9]+/g, ' ').trim();
+  if (!q || !t) return false;
+  if (t === q || t.startsWith(`${q} `)) return true;
+  // Subtítulos e edições curtas: não considerar outro livro com muitas palavras extras como exato.
+  return t.includes(q) && t.length <= q.length * 1.38;
 }
+
+export function rankBookResults(items: CatalogResult[], query: string): CatalogResult[] {
+  const q = normalized(query).replace(/[^a-z0-9]+/g, ' ').trim();
+  const tokens = q.split(' ').filter(token => token.length > 1 && !['da','de','do','dos','das','um','uma','os','as'].includes(token));
+  const score = (item: CatalogResult) => {
+    const t = normalized(item.title).replace(/[^a-z0-9]+/g, ' ').trim();
+    const titleWords = new Set(t.split(' '));
+    const matches = tokens.filter(token => titleWords.has(token)).length;
+    const exact = t === q;
+    const starts = t.startsWith(`${q} `);
+    return (exact ? 1200 : starts ? 800 : bookTitleMatches(item.title, query) ? 550 : 0) +
+      (tokens.length ? 90 * matches / tokens.length : 0) +
+      (item.language === 'pt' ? 18 : 0) + (item.coverUrl ? 3 : 0);
+  };
+  return [...items].sort((a,b) => score(b) - score(a));
+}
+
 export function tmdbSeasonDetails(data:unknown,number:number): {number:number;episodeCount?:number;name?:string;year?:number;coverUrl?:string} {
   const info=(data??{}) as Record<string,unknown>;
   const poster=text(info.poster_path);
@@ -261,7 +276,7 @@ export function bookSearchPlan(rawQuery: string) {
   const isbn = /^(?:\d{13}|\d{9}[\dXx])$/.test(isbnCandidate) ? isbnCandidate.toUpperCase() : undefined;
   const google = new URL('https://www.googleapis.com/books/v1/volumes');
   google.searchParams.set('q', isbn ?? query);
-  google.searchParams.set('maxResults', '20');
+  google.searchParams.set('maxResults', '30');
   google.searchParams.set('printType', 'books');
 
   const fields='key,title,author_name,first_publish_year,cover_i,number_of_pages_median,subject,language,editions,editions.key,editions.title,editions.language,editions.cover_i,editions.publish_date,editions.number_of_pages,editions.isbn_13';
@@ -278,9 +293,12 @@ export function bookSearchPlan(rawQuery: string) {
   openBroad.searchParams.set('limit', '8');
   openBroad.searchParams.set('fields', fields);
 
+  // Busca mais precisa, feita apenas quando o catálogo amplo não encontra o título.
+  const googleTitle = new URL(google);
+  if (!isbn) googleTitle.searchParams.set('q', `intitle:"${query.replace(/"/g, '')}"`);
   const googlePt = new URL(google);
   googlePt.searchParams.set('langRestrict', 'pt');
-  return { google, googlePt, open, openBroad, isbn };
+  return { google, googlePt, googleTitle, open, openBroad, isbn };
 }
 
 /** Consulta direta /isbn/<ISBN>.json: fallback quando a busca indexada não localiza a edição. */

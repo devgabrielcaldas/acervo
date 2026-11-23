@@ -1,4 +1,4 @@
-import {bookSearchPlan,googleBooksResults,mergeGoogleAndOpenLibrary,openLibraryResults,openLibraryIsbnEdition,portugueseWorkEdition,rankBookResults,tmdbDetail,tmdbResults,tmdbSeasonDetails,validateCoverUrl} from './catalog-utils.ts';
+import {bookSearchPlan,bookTitleMatches,googleBooksResults,mergeGoogleAndOpenLibrary,openLibraryResults,openLibraryIsbnEdition,portugueseWorkEdition,rankBookResults,tmdbDetail,tmdbResults,tmdbSeasonDetails,validateCoverUrl} from './catalog-utils.ts';
 import type {CatalogResult,MediaKind} from './catalog-utils.ts';
 
 const DEFAULT_ORIGINS=['http://localhost:5173','http://127.0.0.1:5173','https://livrosfilmesgabriel.netlify.app'];
@@ -58,12 +58,12 @@ async function search(kind:MediaKind,query:string):Promise<{results:CatalogResul
 
   // Se não há edição em português ou a busca é vazia, ampliar sem inventar títulos.
   // Nunca repetir a chamada que já falhou por limite de serviço.
-  const needMore = ![...google,...library].some(item => item.language === 'pt') ||
-    (google.length === 0 && library.length === 0);
+  // ACERVO_UX_NOV2026: um resultado em português irrelevante não encerra a busca.
+  const needMore = ![...google,...library].some(item => bookTitleMatches(item.title, query));
   if (needMore) {
     const tasks: Promise<unknown>[] = [];
     const tags: ('google'|'open')[] = [];
-    if (!googleFailed) { tasks.push(getJson(plan.googlePt)); tags.push('google'); }
+    if (!googleFailed && !plan.isbn) { tasks.push(getJson(plan.googleTitle)); tags.push('google'); }
     // Não repetir consultas idênticas (p. ex. certos ISBNs).
     if (!openFailed && plan.open.toString() !== plan.openBroad.toString()) {
       tasks.push(getJson(plan.openBroad, headers)); tags.push('open');
@@ -101,6 +101,14 @@ async function search(kind:MediaKind,query:string):Promise<{results:CatalogResul
     });
   }
   let results = rankBookResults(mergeGoogleAndOpenLibrary(google, library), query);
+  // Ordena antes de limitar; mostra resultados realmente relacionados primeiro.
+  const exactResults = results.filter(item => bookTitleMatches(item.title, query));
+  if (exactResults.length) {
+    results = [...exactResults, ...results.filter(item => !bookTitleMatches(item.title, query))].slice(0, 15);
+  } else if (!plan.isbn) {
+    warnings.push('Não encontramos uma correspondência exata para o título. Tente incluir o autor ou ISBN.');
+    results = results.slice(0, 6);
+  }
   // Caso o ISBN não tenha sido encontrado na busca indexada, consultar a edição
   // diretamente na Open Library. Um 404 não invalida as outras fontes.
   if (!results.length && plan.isbn && !openFailed) {

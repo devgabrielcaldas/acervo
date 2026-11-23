@@ -5,7 +5,7 @@ import { MediaCard } from '../components/media/MediaCard';
 import { CompleteMediaDialog } from '../components/media/CompleteMediaDialog';
 import { QuickProgressDialog } from '../components/media/QuickProgressDialog';
 import { listMedia, updateMedia } from '../services/mediaRepository';
-import type { DateOnly, MediaRecord } from '../types/media';
+import type { MediaRecord } from '../types/media';
 
 export function InProgressPage() {
   const [items, setItems] = useState<MediaRecord[]>([]);
@@ -71,6 +71,6 @@ export function InProgressPage() {
       onClose={() => setEditingProgress(null)}
       onSave={async patch => update(editingProgress, patch)} />}
     {completing && <CompleteMediaDialog item={completing} onClose={() => setCompleting(null)}
-      onComplete={async (date:DateOnly) => update(completing,{status:'completed',completedOn:date})} />}
+      onComplete={async patch => update(completing, patch)} />}
   </div>;
 }
