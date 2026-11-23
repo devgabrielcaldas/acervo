@@ -57,3 +57,6 @@ LEIA-ME*.md
 
 # Pacote temporario de atualizacao do Acervo
 /.acervo-update/
+
+# Instrucoes auxiliares das atualizacoes
+/LEIA-ME.txt
