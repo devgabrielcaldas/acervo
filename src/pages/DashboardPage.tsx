@@ -1,4 +1,6 @@
 import { MediaCover } from '../components/media/MediaCover';
+import { latestCompletedMedia } from '../utils/latestCompletedMedia';
+import '../styles/dashboard-hero.css';
 import { useEffect, useState } from 'react';
 import { listMedia } from '../services/mediaRepository';
 import { listAnnualGoals } from '../services/goalsRepository';
@@ -10,7 +12,6 @@ import {
   Bookmark,
   BookOpen,
   Check,
-  Clapperboard,
   Film,
   LibraryBig,
   Play,
@@ -57,6 +58,13 @@ export function DashboardPage() {
   const ongoing = items.filter((item) => item.status === 'in_progress').slice(0, 3);
   const wishlist = items.filter((item) => item.status === 'wishlist').slice(0, 3);
 
+  // Últimos concluídos no acervo inteiro; o seletor anual afeta apenas as métricas.
+  const heroHighlights = [
+    { kind: 'book' as const, label: 'Último livro concluído', item: latestCompletedMedia(items, 'book') },
+    { kind: 'movie' as const, label: 'Último filme assistido', item: latestCompletedMedia(items, 'movie') },
+    { kind: 'series' as const, label: 'Última temporada concluída', item: latestCompletedMedia(items, 'series') },
+  ];
+
   return (
     <div className="dashboard page-enter">
       <div className="page-heading">
@@ -73,25 +81,55 @@ export function DashboardPage() {
         </label>
       </div>
 
-      <section className="hero" aria-labelledby="hero-title">
+      <section className="hero hero--compact" aria-labelledby="hero-title">
         <div className="hero__content">
-          <span className="hero__eyebrow"><Sparkles size={15} /> SUA BIBLIOTECA DE EXPERIÊNCIAS</span>
-          <h2 id="hero-title">Colecione momentos, <em>não apenas títulos.</em></h2>
-          <p>Livros que marcaram, filmes inesquecíveis e séries que fizeram companhia. Tudo em um único lugar, do seu jeito.</p>
+          <span className="hero__eyebrow"><Sparkles size={14} /> SUA BIBLIOTECA PESSOAL</span>
+          <h2 id="hero-title">Uma coleção. <em>Mil histórias.</em></h2>
+          <p>Tudo o que você leu e assistiu, em um só lugar.</p>
           <div className="hero__actions">
             <Link className="btn btn--primary" to="/colecao">
-              Explorar coleção <ArrowRight size={17} />
+              Explorar coleção <ArrowRight size={16} />
             </Link>
             <Link className="btn btn--text" to="/desejos">
-              Minha lista de desejos <ArrowRight size={16} />
+              Lista de desejos <ArrowRight size={15} />
             </Link>
           </div>
         </div>
-        <div className="hero__art" aria-hidden="true">
-          <div className="hero__halo" />
-          <div className="art-cover art-cover--back"><Clapperboard size={32} strokeWidth={1.2} /></div>
-          <div className="art-cover art-cover--middle"><Film size={35} strokeWidth={1.2} /></div>
-          <div className="art-cover art-cover--front"><BookOpen size={43} strokeWidth={1.15} /><span>ACERVO</span></div>
+        <div className="hero-live" role="group" aria-label="Últimos livros, filmes e temporadas concluídos">
+          <span className="hero-live__eyebrow">ÚLTIMOS CONCLUÍDOS</span>
+          <div className="hero-live__covers">
+            {heroHighlights.map(({ kind, label, item }) => item ? (
+              <Link
+                key={kind}
+                className={`hero-live__tile hero-live__tile--${kind}`}
+                to={`/colecao/${item.id}`}
+                aria-label={`${label}: ${item.title}. Abrir detalhes.`}
+                title={`${label}: ${item.title}`}
+              >
+                <MediaCover
+                  key={item.id}
+                  className="hero-live__cover"
+                  kind={item.kind}
+                  title={item.title}
+                  mediaId={item.id}
+                  coverId={item.coverId}
+                />
+                <span className="hero-live__kind">{kind === 'book' ? 'LIVRO' : kind === 'movie' ? 'FILME' : 'SÉRIE'}</span>
+              </Link>
+            ) : (
+              <span
+                key={kind}
+                className={`hero-live__tile hero-live__tile--${kind}`}
+                role="img"
+                aria-label={`${label}: nenhum título concluído`}
+              >
+                <span className="hero-live__empty">
+                  {kind === 'book' ? <BookOpen size={28} /> : kind === 'movie' ? <Film size={28} /> : <Tv size={28} />}
+                </span>
+                <span className="hero-live__kind">{kind === 'book' ? 'LIVRO' : kind === 'movie' ? 'FILME' : 'SÉRIE'}</span>
+              </span>
+            ))}
+          </div>
         </div>
       </section>
 

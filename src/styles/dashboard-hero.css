@@ -1,0 +1,270 @@
+/* ACERVO_HERO_COMPACT_2026 — Apenas a Visão Geral; sem modificar os cards e estatísticas. */
+.dashboard .hero.hero--compact {
+  grid-template-columns: minmax(0, 1.35fr) minmax(275px, .7fr);
+  min-height: 226px;
+  border-color: rgba(213, 173, 121, .25);
+  background: linear-gradient(112deg, #24201e 0%, #191d1e 52%, #29221d 100%);
+}
+.dashboard .hero--compact .hero__content {
+  padding: 23px clamp(24px, 2.8vw, 36px);
+}
+.dashboard .hero--compact .hero__eyebrow {
+  font-size: 9px;
+  letter-spacing: 1.3px;
+}
+.dashboard .hero--compact h2 {
+  max-width: 540px;
+  margin: 11px 0 9px;
+  font-size: clamp(29px, 2.45vw, 37px);
+  letter-spacing: -.7px;
+  line-height: 1.13;
+}
+.dashboard .hero--compact .hero__content > p {
+  max-width: 440px;
+  font-size: 12px;
+  line-height: 1.55;
+}
+.dashboard .hero--compact .hero__actions {
+  margin-top: 16px;
+  gap: 9px;
+}
+.dashboard .hero--compact .hero__actions .btn {
+  min-height: 37px;
+  font-size: 11px;
+}
+.dashboard .hero--compact + .section-heading { margin-top: 25px; }
+
+.hero-live {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-width: 0;
+  padding: 24px 24px 19px 2px;
+}
+.hero-live::before {
+  content: '';
+  position: absolute;
+  width: 280px;
+  height: 180px;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  background: radial-gradient(ellipse, rgba(207, 158, 99, .15), transparent 67%);
+}
+.hero-live__eyebrow {
+  margin-bottom: 12px;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 1.65px;
+  color: #c9ac88;
+}
+.hero-live__covers {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  width: 100%;
+  min-width: 0;
+}
+.hero-live__tile {
+  position: relative;
+  display: block;
+  flex: 0 0 91px;
+  width: 91px;
+  height: 131px;
+  overflow: hidden;
+  border-radius: 7px;
+  border: 1px solid rgba(234, 210, 174, .27);
+  background: #282725;
+  box-shadow: 0 9px 22px rgba(0, 0, 0, .4);
+  transform: rotate(0);
+  transition: transform .16s ease, border-color .16s ease;
+}
+.hero-live__tile:first-child { transform: rotate(-7deg) translateY(4px); }
+.hero-live__tile:last-child { transform: rotate(7deg) translateY(4px); }
+.hero-live__tile[href]:hover,
+.hero-live__tile[href]:focus-visible {
+  transform: translateY(-5px);
+  border-color: #e4bc88;
+  z-index: 4;
+}
+.hero-live__tile:focus-visible { outline: 2px solid #e4bc88; outline-offset: 3px; }
+.hero-live__tile .hero-live__cover {
+  width: 100%; height: 100%; aspect-ratio: auto;
+  border-radius: 0;
+}
+.hero-live__tile .hero-live__cover img {
+  display: block;
+  width: 100%; height: 100%;
+  object-fit: cover;
+}
+.hero-live__tile .hero-live__cover .media-cover__fallback {
+  gap: 0;
+  padding: 0;
+}
+.hero-live__tile .hero-live__cover .media-cover__fallback svg { width: 26px; height: 26px; }
+.hero-live__tile .hero-live__cover .media-cover__fallback > span,
+.hero-live__tile .hero-live__cover .media-cover__fallback > small { display: none; }
+.hero-live__empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  background: linear-gradient(135deg, #504339, #232626 80%);
+  color: #d9bc96;
+}
+.hero-live__tile--movie .hero-live__empty { background: linear-gradient(145deg, #3c463f, #1e2425); }
+.hero-live__tile--series .hero-live__empty { background: linear-gradient(145deg, #3d3f4d, #22272a); }
+.hero-live__kind {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  padding: 13px 4px 6px;
+  background: linear-gradient(transparent, rgba(0, 0, 0, .84));
+  text-align: center;
+  color: #f6e4c8;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 1.1px;
+}
+
+@media (max-width: 1100px) {
+  .dashboard .hero.hero--compact { grid-template-columns: minmax(0, 1fr) minmax(230px, .62fr); }
+  .hero-live { padding-right: 12px; }
+  .hero-live__tile { flex-basis: 73px; width: 73px; height: 108px; }
+}
+@media (max-width: 700px) {
+  .dashboard .hero.hero--compact { grid-template-columns: minmax(0, 1fr); min-height: 0; }
+  .dashboard .hero--compact .hero__content { padding: 23px 24px 10px; }
+  .dashboard .hero--compact h2 { font-size: clamp(27px, 6vw, 34px); }
+  .hero-live { padding: 7px 18px 18px; min-height: 0; }
+  .hero-live__eyebrow { margin-bottom: 9px; }
+  .hero-live__tile { flex-basis: 66px; width: 66px; height: 87px; border-radius: 6px; }
+  .hero-live__kind { padding-bottom: 4px; font-size: 7px; }
+  .dashboard .hero--compact + .section-heading { margin-top: 22px; }
+}
+@media (max-width: 520px) {
+  .dashboard .hero--compact .hero__content { padding: 20px 19px 10px; }
+  .dashboard .hero--compact h2 { margin: 9px 0 7px; font-size: 29px; }
+  .dashboard .hero--compact .hero__actions { flex-direction: row; flex-wrap: wrap; gap: 4px 8px; margin-top: 13px; }
+  .dashboard .hero--compact .hero__actions .btn { min-height: 35px; padding: 0 11px; font-size: 11px; }
+  .hero-live { padding-bottom: 13px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-live__tile { transition: none; }
+}
+
+/* ACERVO_HERO_DIAGONAL_NITIDO_2026 — capas em leque, sem alterar a altura do destaque. */
+/* Capas reais permanecem dinâmicas. A nitidez é limitada pela resolução da imagem de origem. */
+.dashboard .hero--compact .hero-live {
+  padding: 11px 16px 12px 2px;
+}
+.dashboard .hero--compact .hero-live__eyebrow {
+  margin-bottom: 9px;
+}
+.dashboard .hero--compact .hero-live__covers {
+  gap: 9px;
+  isolation: isolate;
+  overflow: visible;
+}
+.dashboard .hero--compact .hero-live__tile {
+  flex: 0 0 110px;
+  width: 110px;
+  height: 155px;
+  margin-top: 0;
+  border-radius: 8px;
+  transform: none;
+  transform-origin: 50% 55%;
+  box-shadow: 0 13px 24px rgba(0, 0, 0, .34);
+  transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+}
+/* A composição em diagonal original, com pequena elevação no centro. */
+.dashboard .hero--compact .hero-live__tile:first-child {
+  z-index: 1;
+  margin-top: 0;
+  transform: translateY(6px) rotate(-7deg);
+}
+.dashboard .hero--compact .hero-live__tile:nth-child(2) {
+  z-index: 3;
+  margin-top: 0;
+  transform: translateY(0) rotate(0deg);
+}
+.dashboard .hero--compact .hero-live__tile:last-child {
+  z-index: 2;
+  margin-top: 0;
+  transform: translateY(6px) rotate(7deg);
+}
+/* Evita a combinação de filtros e transformações na própria foto. */
+.dashboard .hero--compact .hero-live__tile .hero-live__cover img {
+  image-rendering: auto;
+  object-fit: cover;
+  object-position: center;
+  width: 100%;
+  height: 100%;
+  filter: none;
+  transform: none;
+}
+.dashboard .hero--compact .hero-live__tile[href]:hover,
+.dashboard .hero--compact .hero-live__tile[href]:focus-visible {
+  border-color: #e4bc88;
+  box-shadow: 0 15px 28px rgba(0, 0, 0, .42);
+}
+.dashboard .hero--compact .hero-live__tile:first-child[href]:hover,
+.dashboard .hero--compact .hero-live__tile:first-child[href]:focus-visible {
+  transform: translateY(-3px) rotate(-5deg);
+}
+.dashboard .hero--compact .hero-live__tile:nth-child(2)[href]:hover,
+.dashboard .hero--compact .hero-live__tile:nth-child(2)[href]:focus-visible {
+  transform: translateY(-5px) rotate(0deg);
+}
+.dashboard .hero--compact .hero-live__tile:last-child[href]:hover,
+.dashboard .hero--compact .hero-live__tile:last-child[href]:focus-visible {
+  transform: translateY(-3px) rotate(5deg);
+}
+@media (max-width: 1380px) {
+  .dashboard .hero--compact .hero-live__tile {
+    flex-basis: 92px;
+    width: 92px;
+    height: 132px;
+  }
+}
+@media (max-width: 1100px) {
+  .dashboard .hero--compact .hero-live { padding: 9px 6px 12px; }
+  .dashboard .hero--compact .hero-live__covers { gap: 7px; }
+  .dashboard .hero--compact .hero-live__tile {
+    flex-basis: 72px;
+    width: 72px;
+    height: 105px;
+  }
+}
+@media (max-width: 700px) {
+  .dashboard .hero--compact .hero-live { padding: 7px 14px 17px; }
+  .dashboard .hero--compact .hero-live__covers { gap: 9px; }
+  .dashboard .hero--compact .hero-live__tile {
+    flex-basis: 78px;
+    width: 78px;
+    height: 112px;
+  }
+}
+@media (max-width: 520px) {
+  .dashboard .hero--compact .hero-live { padding: 7px 12px 16px; }
+  .dashboard .hero--compact .hero-live__tile {
+    flex-basis: 73px;
+    width: 73px;
+    height: 105px;
+  }
+}
+@media (max-width: 340px) {
+  .dashboard .hero--compact .hero-live__tile {
+    flex-basis: 66px;
+    width: 66px;
+    height: 95px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dashboard .hero--compact .hero-live__tile { transition: none; }
+}

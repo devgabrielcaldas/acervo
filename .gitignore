@@ -63,3 +63,6 @@ LEIA-ME*.md
 
 # Pacote auxiliar das miniaturas do dashboard
 /acervo-dashboard-thumbs/
+
+# Instaladores e backups da home compacta
+/.acervo-hero/
