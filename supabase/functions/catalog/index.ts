@@ -1,7 +1,7 @@
 import {bookSearchPlan,bookTitleMatches,googleBooksResults,mergeGoogleAndOpenLibrary,openLibraryResults,openLibraryIsbnEdition,portugueseWorkEdition,rankBookResults,tmdbDetail,tmdbResults,tmdbSeasonDetails,validateCoverUrl} from './catalog-utils.ts';
 import type {CatalogResult,MediaKind} from './catalog-utils.ts';
 
-const DEFAULT_ORIGINS=['http://localhost:5173','http://127.0.0.1:5173','https://livrosfilmesgabriel.netlify.app'];
+const DEFAULT_ORIGINS=['http://localhost:5173','http://127.0.0.1:5173','https://acervocaldas.netlify.app'];
 const ORIGINS=new Set([...DEFAULT_ORIGINS,...(Deno.env.get('ACERVO_ALLOWED_ORIGINS')??'').split(',').map(s=>s.trim()).filter(Boolean)]);
 const SUPABASE_URL=Deno.env.get('SUPABASE_URL')??'';
 const SUPABASE_API_KEY=Deno.env.get('SUPABASE_ANON_KEY')??Deno.env.get('SUPABASE_PUBLISHABLE_KEY')??'';
