@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { ArrowLeft, BookOpen, Check, Film, ImagePlus, Save, Trash2, Tv } from 'lucide-react';
 import { Link, useNavigate, useParams } from 'react-router';
@@ -8,7 +8,8 @@ import { RatingStars } from '../components/media/RatingStars';
 import { CatalogSearch } from '../components/media/CatalogSearch';
 import { downloadCatalogCover, loadCatalogSeason } from '../services/catalogClient';
 import type { CatalogItem } from '../services/catalogClient';
-import { addMedia, getMedia, updateMedia } from '../services/mediaRepository';
+import { addMedia, getMedia, listMedia, updateMedia } from '../services/mediaRepository';
+import { findPossibleDuplicates } from '../utils/smartCollection';
 import { removeCover, saveCover } from '../services/coverRepository';
 import type { BookFormat, DateOnly, MediaCategory, MediaInput, MediaRecord, MediaStatus, WishPriority } from '../types/media';
 import { formatPlaybackTime, parsePlaybackTime, seasonDisplayTitle } from '../utils/progress';
@@ -126,6 +127,27 @@ export function MediaFormPage() {
   const [seasonBusy, setSeasonBusy] = useState(false);
   const seasonRequest = useRef(0);
   const coverRequest = useRef(0);
+  const [candidateItems, setCandidateItems] = useState<MediaRecord[]>([]);
+  const [duplicatesChecked, setDuplicatesChecked] = useState(false);
+  const [duplicateFetchError, setDuplicateFetchError] = useState('');
+
+  useEffect(() => {
+    if (editing) return;
+    let active = true;
+    void listMedia().then(items => { if (active) setCandidateItems(items); })
+      .catch(() => { if (active) setDuplicateFetchError('Não foi possível verificar duplicados neste momento. Você ainda pode cadastrar.'); });
+    return () => { active = false; };
+  }, [editing]);
+
+  const duplicateInput = useMemo((): MediaInput => {
+    const common = { title: values.title, status: values.status, releaseYear: Number(values.releaseYear) || undefined };
+    if (values.kind === 'book') return { ...common, kind: 'book', author: values.author };
+    if (values.kind === 'movie') return { ...common, kind: 'movie', director: values.director };
+    return { ...common, kind: 'series', seriesTitle: values.seriesTitle || undefined,
+      seasonNumber: Number(values.seasonNumber) || undefined };
+  }, [values.kind, values.title, values.status, values.author, values.director, values.releaseYear, values.seriesTitle, values.seasonNumber]);
+  const potentialDuplicates = useMemo(() => editing ? [] : findPossibleDuplicates(duplicateInput, candidateItems), [editing, duplicateInput, candidateItems]);
+  useEffect(() => { setDuplicatesChecked(false); }, [duplicateInput]);
 
   useEffect(() => {
     if (!id) return;
@@ -249,6 +271,10 @@ export function MediaFormPage() {
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (editing && !record) return;
+    if (!editing && potentialDuplicates.length > 0 && !duplicatesChecked) {
+      setError('Confirme que deseja cadastrar este possível duplicado antes de continuar.');
+      return;
+    }
     setSaving(true);
     setError('');
     let savedId: string | undefined;
@@ -310,7 +336,21 @@ export function MediaFormPage() {
                   <CatalogSearch key={`${values.kind}:${values.title}`} kind={values.kind} query={values.title} enabled={catalogActive} onSelect={acceptCatalogItem} />
                 </div>
               )}
-              <label className="media-field"><span>Status <b>*</b></span>
+                             {!editing && (potentialDuplicates.length > 0 || duplicateFetchError) && (
+                 <div className="media-field media-field--wide acervo-duplicates" role="status">
+                   {potentialDuplicates.length > 0 ? <>
+                     <h3>Este título parece já estar no seu Acervo</h3>
+                     <p>Confira os registros antes de salvar. Você pode cadastrar novamente se for intencional (por exemplo, uma releitura).</p>
+                     <ul>{potentialDuplicates.map(existing => <li key={existing.id}>
+                       <Link to={`/colecao/${existing.id}`} target="_blank" rel="noopener noreferrer">{existing.title}</Link>
+                       {existing.releaseYear ? ` · ${existing.releaseYear}` : ''}
+                     </li>)}</ul>
+                     <label><input type="checkbox" checked={duplicatesChecked} onChange={event => { setDuplicatesChecked(event.target.checked); if (event.target.checked) setError(''); }} />
+                       Cadastrar mesmo assim</label>
+                   </> : <p>{duplicateFetchError}</p>}
+                 </div>
+               )}
+               <label className="media-field"><span>Status <b>*</b></span>
                 <select value={values.status} onChange={(event) => changeStatus(event.target.value as MediaStatus)}>
                   <option value="wishlist">{values.kind === 'book' ? 'Quero ler' : 'Quero assistir'}</option>
                   <option value="in_progress">{values.kind === 'book' ? 'Lendo' : 'Assistindo'}</option>

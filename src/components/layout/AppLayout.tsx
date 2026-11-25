@@ -2,11 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
 import {
   Bookmark, BookOpen, ChevronRight, Heart, History, LayoutDashboard,
-  LibraryBig, LogOut, Menu, Moon, PlayCircle, Plus, Settings2, Sparkles, Sun, Target, X,
+  LibraryBig, LogOut, Menu, Moon, PlayCircle, Plus, Search, Settings2, Sparkles, Sun, Target, X,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router';
 import { useAuth } from '../../contexts/AuthContext';
+import { GlobalSearchDialog } from './GlobalSearchDialog';
 
 type Theme = 'dark' | 'light';
 type NavigationItem = { to: string; label: string; shortLabel: string; icon: LucideIcon };
@@ -34,6 +35,8 @@ export function AppLayout() {
   const { signOut } = useAuth();
   const [theme, setTheme] = useState<Theme>(readSavedTheme);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [globalSearchOpen, setGlobalSearchOpen] = useState(false);
+  const globalSearchRef = useRef<HTMLButtonElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const sidebarRef = useRef<HTMLElement>(null);
   const location = useLocation();
@@ -82,6 +85,22 @@ export function AppLayout() {
     media.addEventListener('change', onResize);
     return () => media.removeEventListener('change', onResize);
   }, []);
+
+  useEffect(() => {
+    const shortcut = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        setGlobalSearchOpen(true);
+      }
+    };
+    window.addEventListener('keydown', shortcut);
+    return () => window.removeEventListener('keydown', shortcut);
+  }, []);
+
+  function closeGlobalSearch() {
+    setGlobalSearchOpen(false);
+    window.requestAnimationFrame(() => globalSearchRef.current?.focus());
+  }
 
   function closeMenu(restoreFocus = false) {
     setMenuOpen(false);
@@ -146,6 +165,7 @@ export function AppLayout() {
         </div>
       </aside>
 
+      {globalSearchOpen && <GlobalSearchDialog onClose={closeGlobalSearch} />}
       <div className="shell__right">
         <header className="topbar">
           <div className="topbar__left">
@@ -159,6 +179,11 @@ export function AppLayout() {
           </div>
           <div className="topbar__right">
             <span className="topbar__tag">UM LUGAR PARA SUAS HISTÓRIAS</span>
+            <button ref={globalSearchRef} type="button" className="icon-button acervo-search-trigger"
+              title="Buscar no Acervo (Ctrl+K)" aria-label="Buscar em toda a coleção (Ctrl+K)"
+              aria-haspopup="dialog" aria-expanded={globalSearchOpen} onClick={() => setGlobalSearchOpen(true)}>
+              <Search size={19} /><span className="acervo-search-trigger__hint">Ctrl K</span>
+            </button>
             <Link className="icon-button" to="/novo" title="Adicionar título" aria-label="Adicionar título">
               <Plus size={20} />
             </Link>

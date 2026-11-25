@@ -76,3 +76,6 @@ LEIA-ME*.md
 
 # Instalador auxiliar da correção de capas
 /.acervo-fix-capa/
+
+# Instalador local da Etapa 11
+.acervo-etapa11/

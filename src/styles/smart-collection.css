@@ -1,0 +1,97 @@
+/* ACERVO · Etapa 11 — integra-se aos temas claro/escuro existentes. */
+.acervo-search-trigger { gap: 7px; display: flex; align-items: center; justify-content: center; width: auto; min-width: 40px; padding: 0 10px; }
+.acervo-search-trigger__hint { font-size: 10px; font-weight: 650; color: var(--text-subtle); }
+.acervo-global-search-overlay { position: fixed; inset: 0; z-index: 2200; display: flex; justify-content: center; align-items: flex-start; padding: min(12vh,90px) 18px 22px; background: rgba(0,0,0,.74); backdrop-filter: blur(6px); }
+.acervo-global-search { width: min(690px,100%); min-width: 0; max-height: min(80vh,690px); display:flex; flex-direction: column; overflow: hidden; background: var(--surface); border: 1px solid var(--border); box-shadow: 0 30px 80px rgba(0,0,0,.35); border-radius: 18px; color: var(--text); }
+.acervo-global-search__top { display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--border); padding: 14px 18px; color: var(--accent); }
+.acervo-global-search__top input { min-width: 0; flex: 1; background: transparent; border: 0; outline: none; box-shadow: none; color: var(--text); font: inherit; font-size: 16px; }
+.acervo-global-search__top button { flex: 0 0 auto; }
+.acervo-global-search__results { padding: 17px 16px; overflow: auto; min-height: 120px; flex: 1 1 auto; }
+.acervo-global-search__results > p, .acervo-global-search__results > div[role='alert'] { padding: 16px 6px; color: var(--text-muted); font-size: 13px; }
+.acervo-global-search__list { margin-top: 12px; display: grid; gap: 5px; }
+.acervo-global-search__item { width: 100%; background: transparent; color: var(--text); border: 1px solid transparent; cursor: pointer; border-radius: 11px; display: flex; align-items: center; text-align: left; padding: 8px; gap: 13px; font: inherit; }
+.acervo-global-search__item:hover, .acervo-global-search__item.is-selected, .acervo-global-search__item:focus-visible { background: var(--surface-soft); border-color: var(--border); }
+.acervo-global-search__item .media-cover { flex: 0 0 39px; width: 39px; height: 56px; border-radius: 6px; overflow: hidden; }
+.acervo-global-search__item .media-cover img { width: 100%; height: 100%; object-fit: cover; }
+.acervo-global-search__item .media-cover__fallback { padding: 2px; gap: 0; }
+.acervo-global-search__item .media-cover__fallback svg { width: 15px; height: 15px; }
+.acervo-global-search__item .media-cover__fallback span, .acervo-global-search__item .media-cover__fallback small { display: none; }
+.acervo-global-search__description { display: flex; flex-direction: column; gap: 5px; min-width: 0; flex: 1; }
+.acervo-global-search__description strong { font-size: 13px; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.acervo-global-search__description small { font-size: 11px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.acervo-global-search__footer { border-top: 1px solid var(--border); padding: 12px 18px; color: var(--text-subtle); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; font-size: 10px; }
+
+.acervo-smart-options { display:flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; padding: 13px 0 2px; }
+.acervo-smart-options__left { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.acervo-smart-rating { display: flex; align-items: center; gap: 8px; color: var(--text-muted); font-size: 12px; }
+.acervo-smart-rating select { color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 8px; font: inherit; min-height: 38px; padding: 7px 10px; }
+.acervo-smart-check { display: inline-flex; gap: 8px; align-items: center; font-size: 12px; color: var(--text-muted); cursor: pointer; }
+.acervo-smart-check input { accent-color: var(--accent); width: 16px; height: 16px; }
+.acervo-smart-switch { display: inline-flex; gap: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: 9px; padding: 4px; }
+.acervo-smart-switch button { border:0; background: transparent; color: var(--text-muted); cursor:pointer; padding: 7px 10px; border-radius: 6px; display: flex; align-items: center; gap:6px; min-height: 36px; font:inherit; font-size: 11px; }
+.acervo-smart-switch button.is-active { color: var(--accent); background: var(--surface-soft); }
+.acervo-saved-views { border: 1px solid var(--border); border-radius: 13px; background: var(--surface); padding: 12px 16px; margin-top: 14px; }
+.acervo-saved-views__heading { display: flex; gap: 12px; justify-content: space-between; align-items: center; }
+.acervo-saved-views__heading > span { color: var(--text-subtle); font-size:10px; font-weight:700; letter-spacing:1px; }
+.acervo-saved-views__chips { margin-top: 11px; display: flex; flex-wrap: wrap; gap: 8px; }
+.acervo-saved-views__chip { display:inline-flex; border:1px solid var(--border); border-radius: 9px; overflow: hidden; background: var(--surface-soft); }
+.acervo-saved-views__chip button { font:inherit; font-size:11px; background:transparent; color:var(--text); border:0; cursor:pointer; padding: 8px 10px; }
+.acervo-saved-views__chip button:hover, .acervo-saved-views__chip button:focus-visible { color:var(--accent); }
+.acervo-saved-views__chip button:last-child { border-left:1px solid var(--border); display:grid; place-items:center; padding:8px; }
+.acervo-saved-views__form { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+.acervo-saved-views__form input { background:var(--surface-soft); color:var(--text); min-height:38px; border-radius:8px; border:1px solid var(--border); padding:8px 11px; font:inherit; font-size: 12px; min-width:0; width:min(230px,100%); }
+.acervo-saved-views__form button { border:1px solid var(--border); background:var(--surface-soft); color:var(--accent); cursor:pointer; border-radius:8px; padding:9px 11px; min-height:38px; display:inline-flex; align-items:center; gap:7px; font:inherit; font-size:11px; }
+.acervo-saved-views__form button:disabled { opacity:.45; cursor:wait; }
+.acervo-saved-views__status { margin-top:8px; color:var(--text-muted); font-size:11px; }
+.acervo-saved-views__error { margin-top:8px; color: #d88975; font-size:12px; }
+
+.acervo-media-list { display:grid; gap:10px; }
+.acervo-media-list .acervo-collection-entry { min-width:0; }
+.acervo-media-row { display:flex; gap:15px; align-items:center; min-width:0; min-height:92px; background:var(--surface); border:1px solid var(--border); border-radius:13px; padding:11px 14px; }
+.acervo-media-row__cover { width:49px; height:70px; flex:0 0 49px; }
+.acervo-media-row__cover .media-cover { width:100%; height:100%; border-radius:6px; overflow:hidden; }
+.acervo-media-row__cover img { width:100%; height:100%; object-fit:cover; }
+.acervo-media-row__cover .media-cover__fallback { padding:4px; gap:0; }
+.acervo-media-row__cover .media-cover__fallback svg { width:18px; height:18px; }
+.acervo-media-row__cover .media-cover__fallback span, .acervo-media-row__cover .media-cover__fallback small { display:none; }
+.acervo-media-row__text { flex:1 1 250px; min-width:90px; display:flex; flex-direction:column; gap:5px; }
+.acervo-media-row__title { color:var(--text); text-decoration:none; font-size:13px; font-weight:650; }
+.acervo-media-row__title:hover { color:var(--accent); }
+.acervo-media-row__text > span, .acervo-media-row__status { color:var(--text-muted); font-size:11px; }
+.acervo-media-row__status { flex:0 1 110px; }
+.acervo-media-row__rating { flex:0 1 115px; }
+.acervo-media-row__progress { flex:0 1 150px; min-width:90px; }
+.acervo-media-row__actions { display:flex; flex:0 0 auto; gap:6px; }
+.acervo-media-row__actions button { display:grid; place-items:center; width:37px; height:37px; border-radius:9px; border:1px solid var(--border); background:var(--surface-soft); color:var(--text); cursor:pointer; }
+.acervo-media-row__actions button:hover { color:var(--accent); }
+.acervo-season-results { display:grid; gap:25px; }
+.acervo-season-group { border:1px solid var(--border); border-radius:15px; padding:18px; background:var(--surface); }
+.acervo-season-group__heading { display:flex; gap:12px; flex-wrap:wrap; align-items:baseline; margin-bottom:17px; }
+.acervo-season-group__heading h2 { font-size:17px; margin:0; }
+.acervo-season-group__heading span { color:var(--text-muted); font-size:11px; }
+.acervo-season-group .media-grid { margin-top:0; }
+.acervo-season-group .acervo-media-list { margin-top:0; }
+.acervo-duplicates { border:1px solid rgba(212,172,120,.46); background:rgba(204,155,96,.07); border-radius:11px; padding:14px; }
+.acervo-duplicates h3 { margin:0 0 8px; font-size:14px; color:var(--accent); }
+.acervo-duplicates p, .acervo-duplicates li { font-size:12px; color:var(--text-muted); }
+.acervo-duplicates ul { margin:6px 0 12px; padding-left:19px; }
+.acervo-duplicates a { color:var(--accent); }
+.acervo-duplicates label { display:flex; align-items:center; gap:9px; cursor:pointer; color:var(--text); font-size:12px; }
+.acervo-duplicates input { flex:0 0 auto; width:17px; height:17px; accent-color:var(--accent); }
+@media (max-width: 1050px) { .acervo-media-row__progress { display:none; } .acervo-media-row__rating { flex:0 0 95px; } }
+@media (max-width: 700px) {
+  .acervo-search-trigger__hint, .acervo-global-search__footer span:last-child { display:none; }
+  .acervo-global-search-overlay { padding: 12px 10px; }
+  .acervo-global-search { max-height: 86dvh; border-radius: 13px; }
+  .acervo-saved-views__heading { align-items:flex-start; flex-direction:column; }
+  .acervo-saved-views__form { width:100%; }
+  .acervo-saved-views__form input { flex:1; min-width:130px; }
+  .acervo-media-row { gap:10px; padding:9px; min-height:80px; }
+  .acervo-media-row__cover { width:43px; flex-basis:43px; height:62px; }
+  .acervo-media-row__status, .acervo-media-row__rating { display:none; }
+  .acervo-media-row__text { min-width:0; flex:1; }
+  .acervo-media-row__title { font-size:12px; }
+  .acervo-media-row__actions button { height:34px; width:34px; }
+  .acervo-season-group { padding:12px; }
+}
+@media (prefers-reduced-motion:reduce) { .acervo-global-search-overlay { backdrop-filter: none; } }

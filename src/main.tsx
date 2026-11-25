@@ -24,3 +24,4 @@ import './styles/backup.css';
 import './styles/login.css';
 
 import './styles/ios-no-autozoom.css';
+import './styles/smart-collection.css';

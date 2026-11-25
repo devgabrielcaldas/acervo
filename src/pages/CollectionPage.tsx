@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ArrowRight, BookOpen, CalendarDays, Film, LibraryBig, Play, Plus, Search, SlidersHorizontal, Tv, UserRound } from 'lucide-react';
+import { ArrowRight, BookOpen, BookmarkPlus, CalendarDays, Film, LayoutGrid, LibraryBig, List, Play, Plus, Search, SlidersHorizontal, Trash2, Tv, UserRound } from 'lucide-react';
 import { Link } from 'react-router';
 import { MediaCard } from '../components/media/MediaCard';
+import { MediaListRow } from '../components/media/MediaListRow';
+import { useAuth } from '../contexts/AuthContext';
+import { listSavedViews, createSavedView, removeSavedView } from '../services/savedViewsRepository';
+import { groupMediaSeasons, EMPTY_SMART_FILTERS } from '../utils/smartCollection';
+import type { SavedSmartView, SmartFilters } from '../utils/smartCollection';
 import { StartMediaDialog } from '../components/media/StartMediaDialog';
 import { MediaGridSkeleton } from '../components/media/MediaGridSkeleton';
 import { RetryNotice } from '../components/common/RetryNotice';
@@ -41,6 +46,15 @@ export function CollectionPage() {
   const [sort, setSort] = useState<SortMode>('recent');
   const [busyId, setBusyId] = useState<string>();
   const [starting, setStarting] = useState<MediaRecord | null>(null);
+  const { user } = useAuth();
+  const [minRating, setMinRating] = useState('all');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [groupSeasons, setGroupSeasons] = useState(false);
+  const [savedViews, setSavedViews] = useState<SavedSmartView[]>([]);
+  const [viewName, setViewName] = useState('');
+  const [viewBusy, setViewBusy] = useState(false);
+  const [viewLoading, setViewLoading] = useState(true);
+  const [viewError, setViewError] = useState('');
 
   const refresh = useCallback(async () => {
     try {
@@ -71,6 +85,19 @@ export function CollectionPage() {
       });
     return () => { active = false; };
   }, []);
+
+  // Filtros são salvos no Supabase com RLS: cada usuário só vê os próprios.
+  useEffect(() => {
+    if (!user?.id) { setSavedViews([]); setViewLoading(false); return; }
+    let active = true;
+    setViewLoading(true);
+    void listSavedViews().then(views => {
+      if (active) { setSavedViews(views); setViewError(''); }
+    }).catch((reason: unknown) => {
+      if (active) setViewError(reason instanceof Error ? reason.message : 'Não foi possível carregar seus filtros.');
+    }).finally(() => { if (active) setViewLoading(false); });
+    return () => { active = false; };
+  }, [user?.id]);
 
   // Extrai apenas autores de livros desta conta, remove repetições e ordena A–Z.
   const authors = useMemo(() => {
@@ -103,6 +130,7 @@ export function CollectionPage() {
       (selectedYear === 'all' || getCompletionYear(item) === selectedYear) &&
       (selectedAuthor === 'all' || (item.kind === 'book' &&
         authorCollator.compare(item.author?.trim().replace(/\s+/g, ' ') ?? '', selectedAuthor) === 0)) &&
+      (minRating === 'all' || (item.rating !== undefined && item.rating >= Number(minRating))) &&
       matchesMediaSearch(item, search),
     );
     return result.sort((a, b) => {
@@ -111,7 +139,7 @@ export function CollectionPage() {
       if (sort === 'completed') return (b.completedOn ?? '').localeCompare(a.completedOn ?? '') || b.updatedAt.localeCompare(a.updatedAt);
       return b.updatedAt.localeCompare(a.updatedAt);
     });
-  }, [items, kind, status, selectedYear, selectedAuthor, search, sort]);
+  }, [items, kind, status, selectedYear, selectedAuthor, search, sort, minRating]);
 
   const toggleFavorite = async (item: MediaRecord) => {
     setBusyId(item.id);
@@ -138,9 +166,54 @@ export function CollectionPage() {
   };
 
   const clearFilters = () => {
-    setKind('all'); setStatus('all'); setAuthor('all'); setCompletionYear('all'); setSearch(''); setSort('recent');
+    setKind('all'); setStatus('all'); setAuthor('all'); setCompletionYear('all'); setSearch(''); setSort('recent'); setMinRating('all');
   };
-  const hasFilters = kind !== 'all' || status !== 'all' || selectedAuthor !== 'all' || selectedYear !== 'all' || search.length > 0 || sort !== 'recent';
+  const hasFilters = kind !== 'all' || status !== 'all' || selectedAuthor !== 'all' || selectedYear !== 'all' || search.length > 0 || sort !== 'recent' || minRating !== 'all';
+  const grouped = useMemo(() => groupMediaSeasons(visible), [visible]);
+  const activeFilters: SmartFilters = { ...EMPTY_SMART_FILTERS, kind, status, author: selectedAuthor,
+    completionYear: selectedYear, search, sort, minRating };
+
+  function applySavedView(view: SavedSmartView) {
+    const f = view.filters;
+    setKind(f.kind);
+    setStatus(f.completionYear !== 'all' ? 'completed' : f.status);
+    setCompletionYear(f.completionYear !== 'all' && f.status === 'completed' ? f.completionYear : 'all');
+    setAuthor(f.author); setSearch(f.search); setSort(f.sort); setMinRating(f.minRating);
+  }
+
+  async function saveCurrentView() {
+    const name = viewName.trim();
+    if (!name) { setViewError('Informe o nome do filtro.'); return; }
+    if (savedViews.length >= 12) { setViewError('Limite de 12 filtros salvos por conta.'); return; }
+    setViewBusy(true); setViewError('');
+    try {
+      await createSavedView(name, activeFilters);
+      setSavedViews(await listSavedViews()); setViewName('');
+    } catch (reason) { setViewError(reason instanceof Error ? reason.message : 'Erro ao salvar o filtro.'); }
+    finally { setViewBusy(false); }
+  }
+
+  async function deleteSavedView(view: SavedSmartView) {
+    if (!window.confirm(`Excluir o filtro salvo “${view.name}”? Os títulos da coleção não serão excluídos.`)) return;
+    setViewBusy(true); setViewError('');
+    try { await removeSavedView(view.id); setSavedViews(current => current.filter(item => item.id !== view.id)); }
+    catch (reason) { setViewError(reason instanceof Error ? reason.message : 'Erro ao remover o filtro.'); }
+    finally { setViewBusy(false); }
+  }
+
+  function renderEntry(item: MediaRecord) {
+    return <div className={`acervo-collection-entry ${viewMode === 'list' ? 'acervo-smart-list-entry' : ''}`} key={item.id}>
+      {viewMode === 'list' ? (
+        <MediaListRow item={item} busy={busyId === item.id} onFavorite={selected => void toggleFavorite(selected)} onStart={setStarting} />
+      ) : <>
+        <MediaCard item={item} busy={busyId === item.id} onFavorite={selected => void toggleFavorite(selected)} />
+        {item.status === 'wishlist' && <button type="button" className="btn btn--outline acervo-collection-start" disabled={Boolean(busyId)}
+          onClick={() => setStarting(item)}><Play size={15} aria-hidden="true" /> Iniciar</button>}
+      </>}
+    </div>;
+  }
+
+  const entriesClass = viewMode === 'list' ? 'acervo-media-list' : 'media-grid';
 
   return (
     <div className="collection-page page-enter">
@@ -212,6 +285,38 @@ export function CollectionPage() {
         </div>
       </div>
 
+      <div className="acervo-smart-options">
+        <div className="acervo-smart-options__left">
+          <label className="acervo-smart-rating">Avaliação
+            <select value={minRating} onChange={e => setMinRating(e.target.value)} aria-label="Nota mínima">
+              <option value="all">Todas as notas</option><option value="3">3,0 ou mais</option>
+              <option value="4">4,0 ou mais</option><option value="4.5">4,5 ou mais</option><option value="5">Nota 5,0</option>
+            </select>
+          </label>
+          <label className="acervo-smart-check"><input type="checkbox" checked={groupSeasons} onChange={e => setGroupSeasons(e.target.checked)} /> Agrupar temporadas</label>
+        </div>
+        <div className="acervo-smart-switch" role="group" aria-label="Modo de visualização">
+          <button type="button" className={viewMode === 'grid' ? 'is-active' : ''} aria-pressed={viewMode === 'grid'} onClick={() => setViewMode('grid')}><LayoutGrid size={16}/> Cards</button>
+          <button type="button" className={viewMode === 'list' ? 'is-active' : ''} aria-pressed={viewMode === 'list'} onClick={() => setViewMode('list')}><List size={16}/> Lista</button>
+        </div>
+      </div>
+      <section className="acervo-saved-views" aria-label="Filtros favoritos">
+        <div className="acervo-saved-views__heading">
+          <span>FILTROS FAVORITOS {viewLoading ? '· carregando...' : `· ${savedViews.length}/12`}</span>
+          <form className="acervo-saved-views__form" onSubmit={e => { e.preventDefault(); void saveCurrentView(); }}>
+            <input value={viewName} maxLength={50} onChange={e => setViewName(e.target.value)} placeholder="Nome deste filtro" aria-label="Nome do filtro favorito" />
+            <button type="submit" disabled={viewBusy || viewLoading || !viewName.trim()}><BookmarkPlus size={15}/> Salvar filtro atual</button>
+          </form>
+        </div>
+        {savedViews.length > 0 && <div className="acervo-saved-views__chips">{savedViews.map(view =>
+          <div className="acervo-saved-views__chip" key={view.id}>
+            <button type="button" onClick={() => applySavedView(view)} title={`Aplicar ${view.name}`}>{view.name}</button>
+            <button type="button" aria-label={`Excluir filtro ${view.name}`} disabled={viewBusy} onClick={() => void deleteSavedView(view)}><Trash2 size={13}/></button>
+          </div>)}</div>}
+        {viewError && <p className="acervo-saved-views__error" role="alert">{viewError}</p>}
+        {!viewError && !viewLoading && !savedViews.length && <p className="acervo-saved-views__status">Escolha seus filtros e salve combinações para acessar rapidamente em qualquer dispositivo.</p>}
+      </section>
+
       <div className="collection-results">
         <div className="collection-results__description">
           <span className="section-kicker">{loading ? 'CARREGANDO...' : formatCount(visible.length).toLocaleUpperCase('pt-BR')}</span>
@@ -224,13 +329,18 @@ export function CollectionPage() {
       {loading ? (
         <MediaGridSkeleton count={7} />
       ) : visible.length ? (
-        <div className="media-grid">
-          {visible.map((item) => <div className="acervo-collection-entry" key={item.id}>
-            <MediaCard item={item} busy={busyId === item.id} onFavorite={(selected) => void toggleFavorite(selected)} />
-            {item.status === 'wishlist' && <button type="button" className="btn btn--outline acervo-collection-start" disabled={Boolean(busyId)}
-              onClick={() => setStarting(item)}><Play size={15} aria-hidden="true" /> Iniciar</button>}
-          </div>)}
-        </div>
+        groupSeasons && grouped.groups.length > 0 ? (
+          <div className="acervo-season-results">
+            {grouped.groups.map(group => <section className="acervo-season-group" key={group.key} aria-label={`Temporadas de ${group.name}`}>
+              <div className="acervo-season-group__heading"><h2>{group.name}</h2><span>{group.items.length} temporadas nesta seleção</span></div>
+              <div className={entriesClass}>{group.items.map(renderEntry)}</div>
+            </section>)}
+            {grouped.singles.length > 0 && <section className="acervo-season-group">
+              <div className="acervo-season-group__heading"><h2>Demais títulos</h2><span>{grouped.singles.length} títulos</span></div>
+              <div className={entriesClass}>{grouped.singles.map(renderEntry)}</div>
+            </section>}
+          </div>
+        ) : <div className={entriesClass}>{visible.map(renderEntry)}</div>
       ) : error ? null : (
         <div className="collection-empty">
           <div className="collection-empty__icon"><LibraryBig size={31} strokeWidth={1.5} /></div>
