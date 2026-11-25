@@ -64,7 +64,7 @@ function valuesFromRecord(record: MediaRecord): FormValues {
     currentPage: String(record.currentPage ?? ''), ebookPercent: String(record.ebookPercent ?? ''), format: record.format ?? '',
   };
   if (record.kind === 'movie') return { ...fields, director: record.director ?? '', durationMinutes: String(record.durationMinutes ?? ''),
-    pausedAt: formatPlaybackTime(record.pausedAtSeconds) };
+    pausedAt: formatPlaybackTime(record.pausedAtSeconds), tmdbId: String(record.tmdbId ?? '') };
   return {
     ...fields, currentSeason: String(record.currentSeason ?? ''), currentEpisode: String(record.currentEpisode ?? ''),
     totalSeasons: String(record.totalSeasons ?? ''), totalEpisodes: String(record.totalEpisodes ?? ''),
@@ -90,6 +90,7 @@ function createInput(values: FormValues): MediaInput {
   };
   if (values.kind === 'movie') return {
     ...common, kind: 'movie', director: values.director, durationMinutes: optionalNumber(values.durationMinutes),
+    tmdbId: optionalNumber(values.tmdbId),
     pausedAtSeconds: values.status === 'in_progress' || values.status === 'paused' ? parsePlaybackTime(values.pausedAt) : undefined,
   };
   return {
@@ -220,7 +221,7 @@ export function MediaFormPage() {
       totalSeasons: current.kind === 'series' && item.totalSeasons ? String(item.totalSeasons) : current.totalSeasons,
       totalEpisodes: current.kind === 'series' && item.totalEpisodes ? String(item.totalEpisodes) : current.totalEpisodes,
       seriesTitle: current.kind === 'series' ? item.title : current.seriesTitle,
-      tmdbId: current.kind === 'series' && item.source === 'tmdb' ? item.id : current.tmdbId,
+      tmdbId: (current.kind === 'series' || current.kind === 'movie') && item.source === 'tmdb' ? item.id : current.tmdbId,
       seasonNumber: current.kind === 'series' ? '' : current.seasonNumber,
       currentEpisode: current.kind === 'series' ? '' : current.currentEpisode,
     }));
@@ -280,6 +281,8 @@ export function MediaFormPage() {
     let savedId: string | undefined;
     try {
       const input = createInput(values);
+      // Preserve os personagens quando o cadastro de um livro for editado depois.
+      if (record?.kind === 'book' && input.kind === 'book') input.characters = record.characters;
       const key = id ?? createdId;
       const result = key ? await updateMedia(key, input) : await addMedia(input);
       savedId = result.id;

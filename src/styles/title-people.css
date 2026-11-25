@@ -1,0 +1,44 @@
+/* ACERVO — Personagens dos livros / elenco TMDB. Os três painéis aparecem na ordem de leitura. */
+.media-detail-sections--with-people { grid-template-columns: minmax(0, 1fr); }
+.acervo-title-people { min-width: 0; }
+.acervo-people__heading { display:flex; align-items:flex-start; justify-content:space-between; gap:18px; margin-bottom:20px; }
+.acervo-people__heading h2 { margin:8px 0 7px; }
+.acervo-people__heading p, .acervo-people__help, .acervo-people__empty, .acervo-people__match { color:var(--text-muted); font-size:12px; line-height:1.65; }
+.acervo-people__heading p { margin:0; }
+.acervo-people__edit { flex-shrink:0; font-size:12px; }
+.acervo-people__book-grid, .acervo-people__cast-grid { display:grid; grid-template-columns: repeat(auto-fill,minmax(min(100%,230px),1fr)); gap:12px; }
+.acervo-people__book-person { display:flex; align-items:flex-start; gap:12px; min-width:0; padding:15px; border-radius:12px; border:1px solid var(--border); background:var(--surface-soft); }
+.acervo-people__symbol { width:36px; height:36px; display:grid; place-items:center; flex:0 0 36px; background:var(--accent-soft); color:var(--accent); border-radius:9px; }
+.acervo-people__book-person h3, .acervo-people__cast-member h3 { margin:0 0 5px; font-size:13px; font-weight:750; overflow-wrap:anywhere; }
+.acervo-people__book-person p, .acervo-people__cast-member p { color:var(--text-muted); font-size:12px; line-height:1.55; margin:0; overflow-wrap:anywhere; }
+.acervo-people__cast-member { display:flex; align-items:center; gap:13px; min-width:0; border:1px solid var(--border); background:var(--surface-soft); border-radius:12px; padding:10px; }
+.acervo-people__portrait { width:62px; height:84px; flex:0 0 62px; background:var(--accent-soft); color:var(--accent); border-radius:8px; overflow:hidden; display:grid; place-items:center; }
+.acervo-people__portrait img { display:block; width:100%; height:100%; object-fit:cover; }
+.acervo-people__cast-member > div:last-child { min-width:0; }
+.acervo-people__editor { display:grid; gap:15px; }
+.acervo-people__edit-row { display:grid; grid-template-columns:minmax(0,.7fr) minmax(0,1.3fr) auto; gap:12px; align-items:end; padding:15px; border:1px solid var(--border); border-radius:12px; background:var(--surface-soft); }
+.acervo-people__edit-row .media-field { min-width:0; }
+.acervo-people__remove { display:flex; align-items:center; gap:6px; padding:12px 9px; border:0; background:transparent; color:#d99995; font-size:12px; }
+.acervo-people__editor-actions { display:flex; flex-wrap:wrap; gap:9px; align-items:center; }
+.acervo-people__help { margin:0; }
+.acervo-people__empty { margin:0; padding:17px 0 8px; }
+.acervo-people__loading { color:var(--text-muted); font-size:13px; padding:14px 0; }
+.acervo-people__match { margin:0 0 14px; }
+.acervo-people__more { margin-top:15px; }
+.acervo-people__credits { border-top:1px solid var(--border); margin-top:20px; padding-top:12px; display:flex; gap:8px; align-items:flex-start; color:var(--text-subtle); font-size:10px; line-height:1.6; }
+.acervo-people__credits a { color:var(--accent); text-decoration:underline; }
+@media (max-width: 780px) {
+  .acervo-people__edit-row { grid-template-columns:minmax(0,1fr); gap:11px; }
+  .acervo-people__remove { padding:4px 0; justify-self:start; }
+}
+@media (max-width: 590px) {
+  .acervo-people__heading { flex-direction:column; align-items:stretch; }
+  .acervo-people__edit { align-self:start; }
+  .acervo-people__cast-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
+  .acervo-people__cast-member { flex-direction:column; align-items:stretch; padding:9px; }
+  .acervo-people__portrait { width:100%; height:auto; aspect-ratio:3/4; max-height:180px; }
+  .acervo-people__cast-member h3 { font-size:12px; }
+  .acervo-people__cast-member p { font-size:11px; }
+  .acervo-people__book-grid { grid-template-columns:minmax(0,1fr); }
+  .acervo-people__editor-actions .btn { min-height:40px; }
+}

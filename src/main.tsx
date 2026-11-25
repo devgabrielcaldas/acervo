@@ -25,3 +25,4 @@ import './styles/login.css';
 
 import './styles/ios-no-autozoom.css';
 import './styles/smart-collection.css';
+import './styles/title-people.css';

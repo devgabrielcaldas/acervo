@@ -1,5 +1,6 @@
 import {bookSearchPlan,bookTitleMatches,googleBooksResults,mergeGoogleAndOpenLibrary,openLibraryResults,openLibraryIsbnEdition,portugueseWorkEdition,rankBookResults,tmdbDetail,tmdbResults,tmdbSeasonDetails,validateCoverUrl} from './catalog-utils.ts';
 import type {CatalogResult,MediaKind} from './catalog-utils.ts';
+import { fetchTmdbCast } from './cast-utils.ts';
 
 const DEFAULT_ORIGINS=['http://localhost:5173','http://127.0.0.1:5173','https://acervocaldas.netlify.app'];
 const ORIGINS=new Set([...DEFAULT_ORIGINS,...(Deno.env.get('ACERVO_ALLOWED_ORIGINS')??'').split(',').map(s=>s.trim()).filter(Boolean)]);
@@ -187,6 +188,20 @@ Deno.serve(async(request:Request)=>{
     if(action==='image')return await imageDownload(parsed.url,origin);
     const kind=parsed.kind;
     if(kind!=='book'&&kind!=='movie'&&kind!=='series')return json({error:'Categoria inválida.'},400,origin);
+    if(action==='cast') {
+      if(kind==='book')return json({error:'O elenco automático está disponível para filmes e séries.'},400,origin);
+      const title=typeof parsed.title==='string'?parsed.title.trim():'';
+      const tmdbId=parsed.tmdbId;
+      const releaseYear=parsed.releaseYear;
+      const seasonNumber=parsed.seasonNumber;
+      if(title.length<2||title.length>180)return json({error:'Título inválido para buscar elenco.'},400,origin);
+      if(tmdbId!==undefined&&(!Number.isSafeInteger(tmdbId)||(tmdbId as number)<1))return json({error:'ID TMDB inválido.'},400,origin);
+      if(releaseYear!==undefined&&(!Number.isSafeInteger(releaseYear)||(releaseYear as number)<1800||(releaseYear as number)>2200))return json({error:'Ano de lançamento inválido.'},400,origin);
+      if(seasonNumber!==undefined&&(kind!=='series'||!Number.isSafeInteger(seasonNumber)||(seasonNumber as number)<1||(seasonNumber as number)>100))return json({error:'Temporada inválida.'},400,origin);
+      return json(await fetchTmdbCast({kind,title,tmdbId:tmdbId as number|undefined,
+        releaseYear:releaseYear as number|undefined,seasonNumber:seasonNumber as number|undefined},
+        getJson,tmdbHeaders()),200,origin);
+    }
     if(action==='season') {
       if (kind!=='series') return json({error:'Temporada disponível apenas para séries.'},400,origin);
       const tmdbId=parsed.tmdbId,seasonNumber=parsed.seasonNumber;

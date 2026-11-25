@@ -8,6 +8,7 @@ import type {
   MovieInput,
   SeriesInput,
 } from '../types/media';
+import { cleanBookCharacters } from '../utils/titlePeople';
 
 function optionalText(text?: string): string | undefined {
   return text?.trim() || undefined;
@@ -66,6 +67,7 @@ function validateInput(input: MediaInput): void {
   }
   if (input.kind === 'movie') {
     checkedInteger(input.durationMinutes, 'Duração', 1);
+    checkedInteger(input.tmdbId, 'ID TMDB', 1);
     checkedInteger(input.pausedAtSeconds, 'Tempo de pausa');
     if (input.pausedAtSeconds !== undefined && input.pausedAtSeconds > 359999) throw new Error('Tempo de pausa inválido.');
     if (input.durationMinutes && input.pausedAtSeconds !== undefined && input.pausedAtSeconds > input.durationMinutes * 60) throw new Error('A pausa ultrapassa a duração do filme.');
@@ -108,13 +110,14 @@ function normalize(input: MediaInput, id: string, createdAt: string, coverId?: s
       return {
         ...common, kind: 'book', author: optionalText(book.author), totalPages: book.totalPages,
         currentPage: book.currentPage, ebookPercent: book.ebookPercent, format: book.format,
+        characters: cleanBookCharacters(book.characters),
       };
     }
     case 'movie': {
       const movie: MovieInput = input;
       return {
         ...common, kind: 'movie', director: optionalText(movie.director),
-        durationMinutes: movie.durationMinutes, pausedAtSeconds: movie.pausedAtSeconds,
+        durationMinutes: movie.durationMinutes, pausedAtSeconds: movie.pausedAtSeconds, tmdbId: movie.tmdbId,
       };
     }
     case 'series': {

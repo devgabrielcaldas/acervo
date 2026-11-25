@@ -3,6 +3,7 @@ export type MediaCategory = 'book' | 'movie' | 'series';
 export type MediaStatus = 'wishlist' | 'in_progress' | 'completed' | 'paused' | 'abandoned';
 export type WishPriority = 'high' | 'medium' | 'low';
 export type BookFormat = 'physical' | 'ebook' | 'audiobook';
+export interface BookCharacter { name: string; description: string; }
 
 /** Somente data de calendário: YYYY-MM-DD, sem conversão de fuso horário. */
 export type DateOnly = `${number}-${number}-${number}`;
@@ -28,12 +29,16 @@ export interface BookInput extends MediaInputBase {
   /** Avanço em e-books, independente do total de páginas. */
   ebookPercent?: number;
   format?: BookFormat;
+  /** Personagens descritos pelo usuário; incluídos nos backups JSON. */
+  characters?: BookCharacter[];
 }
 
 export interface MovieInput extends MediaInputBase {
   kind: 'movie';
   director?: string;
   durationMinutes?: number;
+  /** Identificação TMDB da edição escolhida no catálogo. */
+  tmdbId?: number;
   /** Última posição de reprodução em segundos. */
   pausedAtSeconds?: number;
 }
@@ -70,12 +75,16 @@ export interface BookRecord extends MediaRecordBase {
   /** Avanço em e-books, independente do total de páginas. */
   ebookPercent?: number;
   format?: BookFormat;
+  /** Personagens descritos pelo usuário; incluídos nos backups JSON. */
+  characters?: BookCharacter[];
 }
 
 export interface MovieRecord extends MediaRecordBase {
   kind: 'movie';
   director?: string;
   durationMinutes?: number;
+  /** Identificação TMDB da edição escolhida no catálogo. */
+  tmdbId?: number;
   /** Última posição de reprodução em segundos. */
   pausedAtSeconds?: number;
 }

@@ -79,3 +79,6 @@ LEIA-ME*.md
 
 # Instalador local da Etapa 11
 .acervo-etapa11/
+
+# Instalador local e backups do elenco/personagens
+/.acervo-elenco/

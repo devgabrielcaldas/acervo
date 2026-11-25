@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { ArrowLeft, CalendarDays, Heart, Pencil, Trash2 } from 'lucide-react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router';
 import { MediaCover } from '../components/media/MediaCover';
+import { TitlePeopleSection } from '../components/media/TitlePeopleSection';
 import { RatingStars } from '../components/media/RatingStars';
 import { MediaProgress } from '../components/media/MediaProgress';
 import { formatPlaybackTime } from '../utils/progress';
@@ -101,7 +102,7 @@ export function MediaDetailPage() {
           </div>
         </div>
       </div>
-      <div className="media-detail-sections">
+      <div className="media-detail-sections media-detail-sections--with-people">
         <section className="media-form-panel">
           <span className="section-kicker">INFORMAÇÕES DO TÍTULO</span>
           <h2>Os detalhes</h2>
@@ -110,6 +111,7 @@ export function MediaDetailPage() {
               <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}
           </dl>
         </section>
+        <TitlePeopleSection item={item} onSaved={setItem} />
         <section className="media-form-panel">
           <span className="section-kicker">REGISTRO PESSOAL</span>
           <h2>Minha impressão</h2>
