@@ -95,3 +95,51 @@
   .acervo-season-group { padding:12px; }
 }
 @media (prefers-reduced-motion:reduce) { .acervo-global-search-overlay { backdrop-filter: none; } }
+
+/* ACERVO MOBILE — Coleção primeiro, filtros quando necessário. */
+.acervo-mobile-filter-toggle, .acervo-mobile-view-switch { display: none; }
+.acervo-mobile-advanced { display: contents; } /* Mantém o layout desktop. */
+.acervo-mobile-filter-count { color: var(--accent); font-variant-numeric: tabular-nums; }
+
+@media (max-width: 700px) {
+  /* O botão + já existe no topo do aplicativo, evitando uma CTA repetida enorme. */
+  .collection-page .collection-heading { align-items: flex-start; margin-bottom: 14px; }
+  .collection-page .collection-heading > .btn { display: none; }
+  .collection-page .collection-heading .eyebrow,
+  .collection-page .collection-heading p { display: none; }
+  .collection-page .collection-heading h1 { font-size: clamp(25px, 7vw, 32px); line-height: 1.16; margin: 0; }
+  .collection-page .collection-toolbar { gap: 10px; }
+  .collection-page .collection-tab { padding-top: 9px; padding-bottom: 12px; }
+  .collection-page .collection-filters { display: flex; gap: 8px; align-items: stretch; }
+  .collection-page .collection-filters > .collection-search { flex: 1 1 0; min-width: 0; min-height: 44px; padding-inline: 10px; }
+  .collection-page .collection-filters > .collection-search input { min-width: 0; }
+  .acervo-mobile-filter-toggle {
+    flex: 0 0 auto; display: inline-flex; gap: 7px; min-height: 44px;
+    padding: 0 12px; align-items: center; justify-content: center;
+    border: 1px solid var(--border); border-radius: 11px;
+    background: var(--surface); color: var(--text);
+    font: inherit; font-size: 13px; font-weight: 650; cursor: pointer;
+  }
+  .acervo-mobile-filter-toggle[aria-expanded='true'] { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+  .acervo-mobile-filter-count { display: inline-grid; place-items: center; border-radius: 6px; min-width: 19px; height: 20px; padding-inline: 3px; background: var(--accent-soft); font-size: 11px; font-weight: 800; }
+  .collection-page .collection-filters > .collection-select { display: none; flex: 1 1 calc(50% - 4px); min-width: 0; padding-inline: 9px; }
+  .collection-page .collection-toolbar.acervo-mobile-filters-open .collection-filters > .collection-select { display: flex; }
+  .collection-page .collection-filters > .collection-select select { width: 100%; min-width: 0; }
+  .acervo-mobile-advanced { display: none; }
+  .acervo-mobile-advanced--open { display: block; }
+  .acervo-mobile-advanced .acervo-smart-options { padding-top: 12px; }
+  .acervo-mobile-advanced .acervo-smart-switch { display: none; }
+  .acervo-mobile-advanced .acervo-saved-views { margin-top: 12px; }
+  .acervo-mobile-view-switch {
+    display: inline-flex; flex: 0 0 auto; align-items: center; gap: 3px;
+    padding: 3px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface);
+  }
+  .acervo-mobile-view-switch button {
+    width: 33px; height: 34px; padding: 0; border: 0; border-radius: 7px;
+    background: transparent; color: var(--text-muted); display: grid; place-items: center; cursor: pointer;
+  }
+  .acervo-mobile-view-switch button.is-active { background: var(--surface-soft); color: var(--accent); }
+  .collection-page .collection-results { gap: 7px 10px; margin-top: 8px; min-height: 40px; flex-wrap: wrap; }
+  .collection-page .collection-results__description { flex: 1 1 auto; min-width: 90px; }
+  .collection-page .collection-clear { flex: 0 0 auto; padding-block: 6px; }
+}

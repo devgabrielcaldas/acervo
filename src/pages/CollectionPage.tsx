@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowRight, BookOpen, BookmarkPlus, CalendarDays, Film, LayoutGrid, LibraryBig, List, Play, Plus, Search, SlidersHorizontal, Trash2, Tv, UserRound } from 'lucide-react';
 import { Link } from 'react-router';
 import { MediaCard } from '../components/media/MediaCard';
@@ -49,6 +49,8 @@ export function CollectionPage() {
   const { user } = useAuth();
   const [minRating, setMinRating] = useState('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const mobileFilterButtonRef = useRef<HTMLButtonElement>(null);
   const [groupSeasons, setGroupSeasons] = useState(false);
   const [savedViews, setSavedViews] = useState<SavedSmartView[]>([]);
   const [viewName, setViewName] = useState('');
@@ -169,6 +171,10 @@ export function CollectionPage() {
     setKind('all'); setStatus('all'); setAuthor('all'); setCompletionYear('all'); setSearch(''); setSort('recent'); setMinRating('all');
   };
   const hasFilters = kind !== 'all' || status !== 'all' || selectedAuthor !== 'all' || selectedYear !== 'all' || search.length > 0 || sort !== 'recent' || minRating !== 'all';
+  const advancedFilterCount = [
+    status !== 'all', selectedAuthor !== 'all', selectedYear !== 'all',
+    sort !== 'recent', minRating !== 'all', groupSeasons,
+  ].filter(Boolean).length;
   const grouped = useMemo(() => groupMediaSeasons(visible), [visible]);
   const activeFilters: SmartFilters = { ...EMPTY_SMART_FILTERS, kind, status, author: selectedAuthor,
     completionYear: selectedYear, search, sort, minRating };
@@ -179,6 +185,8 @@ export function CollectionPage() {
     setStatus(f.completionYear !== 'all' ? 'completed' : f.status);
     setCompletionYear(f.completionYear !== 'all' && f.status === 'completed' ? f.completionYear : 'all');
     setAuthor(f.author); setSearch(f.search); setSort(f.sort); setMinRating(f.minRating);
+    setMobileFiltersOpen(false);
+    window.requestAnimationFrame(() => mobileFilterButtonRef.current?.focus());
   }
 
   async function saveCurrentView() {
@@ -226,7 +234,7 @@ export function CollectionPage() {
         <Link className="btn btn--primary" to="/novo"><Plus size={17} /> Novo título</Link>
       </div>
 
-      <div className="collection-toolbar">
+      <div className={`collection-toolbar${mobileFiltersOpen ? ' acervo-mobile-filters-open' : ''}`}>
         <div className="collection-tabs" role="group" aria-label="Filtrar por categoria">
           {tabs.map(({ key, label, icon: Icon }) => (
             <button key={key} type="button" className={`collection-tab ${kind === key ? 'collection-tab--active' : ''}`}
@@ -239,12 +247,18 @@ export function CollectionPage() {
             </button>
           ))}
         </div>
-        <div className="collection-filters">
+        <div id="acervo-advanced-selects" className="collection-filters">
           <label className="collection-search">
             <Search size={18} aria-hidden="true" />
             <span className="sr-only">Buscar por título, autor, diretor ou gênero</span>
             <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar na coleção..." />
           </label>
+          <button ref={mobileFilterButtonRef} type="button" className="acervo-mobile-filter-toggle" aria-controls="acervo-advanced-selects acervo-advanced-filters"
+            aria-expanded={mobileFiltersOpen} onClick={() => setMobileFiltersOpen(open => !open)}>
+            <SlidersHorizontal size={17} aria-hidden="true" />
+            <span>Filtros</span>
+            {advancedFilterCount > 0 && <span className="acervo-mobile-filter-count">{advancedFilterCount}</span>}
+          </button>
           {(kind === 'all' || kind === 'book') && authors.length > 0 && (
             <label className="collection-select collection-select--author">
               <UserRound size={16} aria-hidden="true" />
@@ -285,6 +299,7 @@ export function CollectionPage() {
         </div>
       </div>
 
+      <div id="acervo-advanced-filters" className={`acervo-mobile-advanced${mobileFiltersOpen ? ' acervo-mobile-advanced--open' : ''}`}>
       <div className="acervo-smart-options">
         <div className="acervo-smart-options__left">
           <label className="acervo-smart-rating">Avaliação
@@ -316,11 +331,22 @@ export function CollectionPage() {
         {viewError && <p className="acervo-saved-views__error" role="alert">{viewError}</p>}
         {!viewError && !viewLoading && !savedViews.length && <p className="acervo-saved-views__status">Escolha seus filtros e salve combinações para acessar rapidamente em qualquer dispositivo.</p>}
       </section>
+      </div>
 
       <div className="collection-results">
         <div className="collection-results__description">
           <span className="section-kicker">{loading ? 'CARREGANDO...' : formatCount(visible.length).toLocaleUpperCase('pt-BR')}</span>
           {selectedYear !== 'all' && <span className="collection-year-note">Somente títulos concluídos com data registrada em {selectedYear}.</span>}
+        </div>
+        <div className="acervo-mobile-view-switch" role="group" aria-label="Visualização dos títulos">
+          <button type="button" title="Exibir em cards" aria-label="Exibir em cards" aria-pressed={viewMode === 'grid'}
+            className={viewMode === 'grid' ? 'is-active' : ''} onClick={() => setViewMode('grid')}>
+            <LayoutGrid size={17} aria-hidden="true" />
+          </button>
+          <button type="button" title="Exibir em lista" aria-label="Exibir em lista" aria-pressed={viewMode === 'list'}
+            className={viewMode === 'list' ? 'is-active' : ''} onClick={() => setViewMode('list')}>
+            <List size={18} aria-hidden="true" />
+          </button>
         </div>
         {hasFilters && <button className="collection-clear" type="button" onClick={clearFilters}>Limpar filtros <ArrowRight size={14} /></button>}
       </div>
