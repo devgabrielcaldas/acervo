@@ -40,7 +40,9 @@
   .acervo-people__edit { align-self:start; }
   .acervo-people__cast-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
   .acervo-people__cast-member { flex-direction:column; align-items:stretch; padding:9px; }
-  .acervo-people__portrait { width:100%; height:auto; aspect-ratio:3/4; max-height:180px; }
+  /* No flex-direction:column, flex-basis:62px encolhia as fotos para faixas horizontais. */
+  .acervo-people__portrait { width:100%; height:auto; aspect-ratio:2/3; max-height:none; flex:0 0 auto; }
+  .acervo-people__portrait img { object-fit:contain; object-position:center top; }
   .acervo-people__cast-member h3 { font-size:12px; }
   .acervo-people__cast-member p { font-size:11px; }
   .acervo-people__book-grid { grid-template-columns:minmax(0,1fr); }
