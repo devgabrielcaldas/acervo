@@ -82,3 +82,8 @@ LEIA-ME*.md
 
 # Instalador local e backups do elenco/personagens
 /.acervo-elenco/
+
+# Arquivos auxiliares da atualizacao dos retratos
+/instalar_retrato.py
+/title-people.css
+/elenco-retratos-mobile.test.cjs
