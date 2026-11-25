@@ -3,7 +3,7 @@ import { listMedia, updateMedia } from '../services/mediaRepository';
 import type { DateOnly, MediaRecord, MediaStatus } from '../types/media';
 
 export function getMediaError(error: unknown): string {
-  return error instanceof Error ? error.message : 'Não foi possível acessar os dados locais.';
+  return error instanceof Error ? error.message : 'Não foi possível acessar os dados da sua conta.';
 }
 
 /** Lê uma coleção única: desejos e favoritos são apenas filtros sobre os registros. */
@@ -14,9 +14,14 @@ export function useMediaLibrary() {
   const [busyId, setBusyId] = useState<string>();
 
   const refresh = useCallback(async () => {
-    const records = await listMedia();
-    setItems(records);
-    setError('');
+    try {
+      const records = await listMedia();
+      setItems(records);
+      setError('');
+    } catch (reason) {
+      setError(getMediaError(reason));
+      throw reason;
+    }
   }, []);
 
   useEffect(() => {

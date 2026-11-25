@@ -1,0 +1,19 @@
+/* Acervo etapa 10 — tratamentos de carregamento/erros e ação rápida. */
+.acervo-skeleton-grid { pointer-events: none; }
+.acervo-skeleton-card { min-width: 0; padding: 9px 9px 16px; border: 1px solid var(--border); border-radius: 15px; background: var(--surface); }
+.acervo-skeleton-cover { width: 100%; aspect-ratio: 2/3; border-radius: 10px; background: var(--surface-soft); }
+.acervo-skeleton-line { height: 12px; margin-top: 12px; border-radius: 5px; background: var(--surface-soft); }
+.acervo-skeleton-line--long { width: 92%; }
+.acervo-skeleton-line--short { width: 70%; height: 9px; }
+.acervo-skeleton-line--tiny { width: 44%; height: 8px; }
+.acervo-skeleton-cover, .acervo-skeleton-line { animation: acervo-skeleton-pulse 1.4s ease-in-out infinite; }
+@keyframes acervo-skeleton-pulse { 0%,100% { opacity: .53; } 50% { opacity: 1; } }
+.acervo-retry-notice { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; border: 1px solid rgba(213,142,102,.36); background: rgba(170,92,65,.08); border-radius: 12px; padding: 13px 17px; margin: 14px 0; color: var(--text); font-size: 12px; }
+.acervo-retry-notice button { min-height: 36px; display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
+.dashboard-mini-list__entry { display: flex; align-items: center; min-width: 0; gap: 7px; border-bottom: 1px solid var(--border); }
+.dashboard-mini-list__entry:last-child { border-bottom: 0; }
+.dashboard-mini-list__entry > a { flex: 1; min-width: 0; border-bottom: 0 !important; }
+.dashboard-mini-list__quick { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 36px; min-width: 36px; padding: 7px; background: var(--surface-soft); border: 1px solid var(--border); border-radius: 9px; color: var(--accent); cursor: pointer; font: inherit; font-size: 11px; }
+.dashboard-mini-list__quick:hover, .dashboard-mini-list__quick:focus-visible { border-color: var(--accent); }
+@media (max-width: 590px) { .acervo-retry-notice { align-items: stretch; } .acervo-retry-notice button { width: 100%; justify-content: center; } }
+@media (prefers-reduced-motion: reduce) { .acervo-skeleton-cover, .acervo-skeleton-line { animation: none; opacity: .72; } }

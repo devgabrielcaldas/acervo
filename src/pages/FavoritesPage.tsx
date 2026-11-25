@@ -5,19 +5,21 @@ import { CategoryTabs } from '../components/media/CategoryTabs';
 import type { CategoryFilter } from '../components/media/CategoryTabs';
 import { MediaCard } from '../components/media/MediaCard';
 import { useMediaLibrary } from '../hooks/useMediaLibrary';
+import { matchesMediaSearch } from '../utils/searchMedia';
+import { MediaGridSkeleton } from '../components/media/MediaGridSkeleton';
+import { RetryNotice } from '../components/common/RetryNotice';
 
 type FavoriteSort = 'recent' | 'title' | 'rating';
 
 export function FavoritesPage() {
-  const { items, loading, error, busyId, toggleFavorite } = useMediaLibrary();
+  const { items, loading, error, busyId, toggleFavorite, refresh } = useMediaLibrary();
   const [kind, setKind] = useState<CategoryFilter>('all');
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<FavoriteSort>('recent');
   const favorites = useMemo(() => items.filter((item) => item.favorite), [items]);
   const visible = useMemo(() => {
-    const query = search.toLocaleLowerCase('pt-BR').trim();
     return favorites.filter((item) => (kind === 'all' || kind === item.kind) &&
-      (!query || item.title.toLocaleLowerCase('pt-BR').includes(query)))
+      matchesMediaSearch(item, search))
       .sort((a, b) => sort === 'title' ? a.title.localeCompare(b.title, 'pt-BR') :
         sort === 'rating' ? (b.rating ?? -1) - (a.rating ?? -1) || a.title.localeCompare(b.title, 'pt-BR') :
           b.updatedAt.localeCompare(a.updatedAt));
@@ -59,12 +61,12 @@ export function FavoritesPage() {
         <span className="section-kicker">{loading ? 'CARREGANDO...' : `${visible.length} ${visible.length === 1 ? 'FAVORITO' : 'FAVORITOS'}`}</span>
         {hasFilters && <button className="collection-clear" type="button" onClick={clear}>Limpar filtros <ArrowRight size={14} /></button>}
       </div>
-      {error && <p className="media-alert media-alert--error" role="alert">{error}</p>}
-      {loading ? <div className="collection-empty" role="status">Carregando seus favoritos...</div> : visible.length ? (
+      {error && <RetryNotice message={error} onRetry={() => { void refresh().catch(() => {}); }} />}
+      {loading ? <MediaGridSkeleton count={6} /> : visible.length ? (
         <div className="media-grid">{visible.map((item) =>
           <MediaCard key={item.id} item={item} busy={busyId === item.id} onFavorite={(record) => { void toggleFavorite(record); }} />)}
         </div>
-      ) : (
+      ) : error ? null : (
         <div className="collection-empty">
           <div className="collection-empty__icon"><Heart size={30} /></div>
           <h2>{favorites.length ? 'Nenhum favorito encontrado' : 'Suas histórias inesquecíveis'}</h2>

@@ -256,13 +256,13 @@ export function StoragePage() {
             </div>
             <SummaryCards summary={prepared.preview} />
             <div className="acervo-backup__comparison">
-              <div><span>Atualmente neste navegador</span><strong>{summary ? summary.books + summary.movies + summary.series : '—'} títulos</strong></div>
+              <div><span>Atualmente na sua conta</span><strong>{summary ? summary.books + summary.movies + summary.series : '—'} títulos</strong></div>
               <ArrowRight size={18} aria-hidden="true" />
               <div><span>Após a restauração</span><strong>{prepared.records.length} títulos</strong></div>
             </div>
             <div className="acervo-backup__warning" role="note">
               <ShieldAlert size={20} aria-hidden="true" />
-              <p><strong>Atenção:</strong> esta operação substitui todos os livros, filmes, séries, capas e metas deste navegador pelos dados do arquivo. Não combina registros nem permite desfazer. Exporte o estado atual antes de continuar.</p>
+              <p><strong>Atenção:</strong> esta operação substitui todos os livros, filmes, séries, capas e metas desta conta pelos dados do arquivo. Não combina registros nem permite desfazer. Exporte o estado atual antes de continuar.</p>
             </div>
             <label className="acervo-backup__confirm-label" htmlFor="acervo-backup-confirm">
               Para confirmar a substituição, digite <strong>RESTAURAR</strong>:

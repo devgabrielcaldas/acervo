@@ -4,6 +4,8 @@ import { Link } from 'react-router';
 import { MediaCard } from '../components/media/MediaCard';
 import { CompleteMediaDialog } from '../components/media/CompleteMediaDialog';
 import { QuickProgressDialog } from '../components/media/QuickProgressDialog';
+import { MediaGridSkeleton } from '../components/media/MediaGridSkeleton';
+import { RetryNotice } from '../components/common/RetryNotice';
 import { listMedia, updateMedia } from '../services/mediaRepository';
 import type { MediaRecord } from '../types/media';
 
@@ -11,6 +13,7 @@ export function InProgressPage() {
   const [items, setItems] = useState<MediaRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [retry, setRetry] = useState(0);
   const [busyId, setBusyId] = useState<string>();
   const [completing, setCompleting] = useState<MediaRecord | null>(null);
   const [editingProgress, setEditingProgress] = useState<MediaRecord | null>(null);
@@ -21,7 +24,7 @@ export function InProgressPage() {
       .catch((reason: unknown) => { if (alive) setError(reason instanceof Error ? reason.message : 'Falha ao carregar a coleção.'); })
       .finally(() => { if (alive) setLoading(false); });
     return () => { alive = false; };
-  }, []);
+  }, [retry]);
 
   async function update(item: MediaRecord, change: Record<string, unknown>) {
     setBusyId(item.id);setError('');
@@ -61,10 +64,10 @@ export function InProgressPage() {
       <h1>Em andamento<span className="heading-period">.</span></h1>
       <p>Continue de onde parou: páginas, percentuais, episódios e tempo de reprodução.</p>
     </div><Link className="btn btn--primary" to="/novo"><Plus size={16}/> Novo título</Link></div>
-    {error && <p className="media-alert media-alert--error" role="alert">{error}</p>}
-    {loading ? <p className="media-loading" role="status">Carregando seus progressos...</p>
+    {error && <RetryNotice message={error} onRetry={() => { setError(''); setLoading(true); setRetry(value => value + 1); }} />}
+    {loading ? <MediaGridSkeleton count={5} />
       : active.length || paused.length ? <>{section(active,'Lendo e assistindo')}{section(paused,'Pausados')}</>
-      : <div className="collection-empty"><BookOpenCheck size={35} /><h2>Nenhuma história em andamento</h2>
+      : error ? null : <div className="collection-empty"><BookOpenCheck size={35} /><h2>Nenhuma história em andamento</h2>
           <p>Comece um livro, filme ou uma temporada para acompanhar seu progresso aqui.</p>
           <Link className="btn btn--primary" to="/colecao">Ir para a coleção</Link></div>}
     {editingProgress && <QuickProgressDialog key={editingProgress.id} item={editingProgress}

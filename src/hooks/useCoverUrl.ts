@@ -1,29 +1,28 @@
 import { useEffect, useState } from 'react';
-import { getCoverBlob } from '../services/coverRepository';
+import { getCachedCoverBlob } from '../utils/coverBlobCache';
 
 /** Gera uma URL temporária somente enquanto a imagem está em uso. */
 export function useCoverUrl(mediaId?: string, coverId?: string) {
-  const [url, setUrl] = useState<string>();
+  const [image, setImage] = useState<{ key: string; url: string }>();
+  const key = mediaId && coverId ? `${mediaId}:${coverId}` : undefined;
 
   useEffect(() => {
-    if (!mediaId || !coverId) return;
-    let mounted = true;
+    if (!mediaId || !coverId || !key) return;
+    let active = true;
     let objectUrl: string | undefined;
-    void getCoverBlob(mediaId)
+    void getCachedCoverBlob(mediaId, coverId)
       .then((blob) => {
-        if (blob && mounted) {
+        if (blob && active) {
           objectUrl = URL.createObjectURL(blob);
-          setUrl(objectUrl);
+          setImage({ key, url: objectUrl });
         }
       })
-      .catch(() => {
-        if (mounted) setUrl(undefined);
-      });
+      .catch(() => { if (active) setImage(undefined); });
     return () => {
-      mounted = false;
+      active = false;
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [mediaId, coverId]);
+  }, [mediaId, coverId, key]);
 
-  return coverId ? url : undefined;
+  return image && image.key === key ? image.url : undefined;
 }

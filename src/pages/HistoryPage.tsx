@@ -6,6 +6,9 @@ import { MediaCard } from '../components/media/MediaCard';
 import { useMediaLibrary } from '../hooks/useMediaLibrary';
 import type { MediaRecord } from '../types/media';
 import { formatDate } from '../utils/mediaLabels';
+import { matchesMediaSearch } from '../utils/searchMedia';
+import { MediaGridSkeleton } from '../components/media/MediaGridSkeleton';
+import { RetryNotice } from '../components/common/RetryNotice';
 
 type HistorySort = 'newest' | 'oldest' | 'title' | 'rating';
 type RatingFilter = 'all' | 'unrated' | `${number}`;
@@ -15,7 +18,7 @@ const yearOf = (date: string) => date.slice(0, 4);
 const monthOf = (date: string) => date.slice(5, 7);
 
 export function HistoryPage() {
-  const { items, loading, error, busyId, toggleFavorite } = useMediaLibrary();
+  const { items, loading, error, busyId, toggleFavorite, refresh } = useMediaLibrary();
   const [kind, setKind] = useState<CategoryFilter>('all');
   const [year, setYear] = useState('all');
   const [month, setMonth] = useState('all');
@@ -35,7 +38,6 @@ export function HistoryPage() {
     .sort((a, b) => b.localeCompare(a)), [completed]);
 
   const visible = useMemo(() => {
-    const query = search.toLocaleLowerCase('pt-BR').trim();
     return completed.filter((item) => {
       const date = item.completedOn;
       if (kind !== 'all' && item.kind !== kind) return false;
@@ -47,8 +49,7 @@ export function HistoryPage() {
       if (favoritesOnly && !item.favorite) return false;
       if (rating === 'unrated' && item.rating !== undefined) return false;
       if (rating !== 'all' && rating !== 'unrated' && (item.rating === undefined || item.rating !== Number(rating))) return false;
-      if (query && ![item.title, item.kind === 'book' ? item.author : item.kind === 'movie' ? item.director : '', ...item.genres]
-        .join(' ').toLocaleLowerCase('pt-BR').includes(query)) return false;
+      if (!matchesMediaSearch(item, search)) return false;
       return true;
     }).sort((a, b) => {
       if (sort === 'title') return a.title.localeCompare(b.title, 'pt-BR');
@@ -158,8 +159,8 @@ export function HistoryPage() {
           <button className={displayMode === 'month' ? 'is-active' : ''} aria-pressed={displayMode === 'month'} type="button" onClick={() => setDisplayMode('month')}><CalendarRange size={14} /> Por mês</button>
         </div>
       </div>
-      {error && <p className="media-alert media-alert--error" role="alert">{error}</p>}
-      {loading ? <div className="collection-empty" role="status">Carregando seu histórico...</div> : visible.length ? (
+      {error && <RetryNotice message={error} onRetry={() => { void refresh().catch(() => {}); }} />}
+      {loading ? <MediaGridSkeleton count={6} /> : visible.length ? (
         displayMode === 'month' ? (
           <div className="acervo-history-groups">
             {grouped.map(([key, group]) => {
@@ -171,7 +172,7 @@ export function HistoryPage() {
             })}
           </div>
         ) : cards(visible)
-      ) : (
+      ) : error ? null : (
         <div className="collection-empty">
           <div className="collection-empty__icon"><History size={30} /></div>
           <h2>{completed.length ? 'Nenhum registro nesse período' : 'O histórico começa com uma conclusão'}</h2>

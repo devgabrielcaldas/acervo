@@ -3,11 +3,14 @@ import { ArrowRight, BookOpen, CalendarDays, Film, LibraryBig, Play, Plus, Searc
 import { Link } from 'react-router';
 import { MediaCard } from '../components/media/MediaCard';
 import { StartMediaDialog } from '../components/media/StartMediaDialog';
+import { MediaGridSkeleton } from '../components/media/MediaGridSkeleton';
+import { RetryNotice } from '../components/common/RetryNotice';
 import { getMediaError } from '../hooks/useMediaLibrary';
 
 import { listMedia, updateMedia } from '../services/mediaRepository';
 import type { MediaCategory, MediaRecord, MediaStatus } from '../types/media';
 import { statusLabels } from '../utils/mediaLabels';
+import { matchesMediaSearch } from '../utils/searchMedia';
 import { getCompletionYear, listCompletionYears } from '../utils/completionYears';
 
 type KindFilter = MediaCategory | 'all';
@@ -94,15 +97,13 @@ export function CollectionPage() {
     : 'all';
 
   const visible = useMemo(() => {
-    const query = search.toLocaleLowerCase('pt-BR').trim();
     const result = items.filter((item) =>
       (kind === 'all' || item.kind === kind) &&
       (status === 'all' || item.status === status) &&
       (selectedYear === 'all' || getCompletionYear(item) === selectedYear) &&
       (selectedAuthor === 'all' || (item.kind === 'book' &&
         authorCollator.compare(item.author?.trim().replace(/\s+/g, ' ') ?? '', selectedAuthor) === 0)) &&
-      (!query || [item.title, item.kind === 'book' ? item.author : item.kind === 'movie' ? item.director : '', ...item.genres]
-        .join(' ').toLocaleLowerCase('pt-BR').includes(query)),
+      matchesMediaSearch(item, search),
     );
     return result.sort((a, b) => {
       if (sort === 'title') return a.title.localeCompare(b.title, 'pt-BR');
@@ -219,9 +220,9 @@ export function CollectionPage() {
         {hasFilters && <button className="collection-clear" type="button" onClick={clearFilters}>Limpar filtros <ArrowRight size={14} /></button>}
       </div>
 
-      {error && <p className="media-alert media-alert--error" role="alert">{error}</p>}
+      {error && <RetryNotice message={error} onRetry={() => { void refresh().catch(() => {}); }} />}
       {loading ? (
-        <div className="collection-empty" role="status">Carregando sua coleção...</div>
+        <MediaGridSkeleton count={7} />
       ) : visible.length ? (
         <div className="media-grid">
           {visible.map((item) => <div className="acervo-collection-entry" key={item.id}>
@@ -230,7 +231,7 @@ export function CollectionPage() {
               onClick={() => setStarting(item)}><Play size={15} aria-hidden="true" /> Iniciar</button>}
           </div>)}
         </div>
-      ) : (
+      ) : error ? null : (
         <div className="collection-empty">
           <div className="collection-empty__icon"><LibraryBig size={31} strokeWidth={1.5} /></div>
           <h2>{items.length ? 'Nenhum título encontrado' : 'Sua coleção começa com uma história'}</h2>

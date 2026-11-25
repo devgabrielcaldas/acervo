@@ -1,4 +1,9 @@
 import { MediaCover } from '../components/media/MediaCover';
+import { QuickProgressDialog } from '../components/media/QuickProgressDialog';
+import { RetryNotice } from '../components/common/RetryNotice';
+import { updateMedia } from '../services/mediaRepository';
+import { getMediaError } from '../hooks/useMediaLibrary';
+import '../styles/quality.css';
 import { latestCompletedMedia } from '../utils/latestCompletedMedia';
 import '../styles/dashboard-hero.css';
 import { useEffect, useState } from 'react';
@@ -15,6 +20,7 @@ import {
   Film,
   LibraryBig,
   Play,
+  Pencil,
   Sparkles,
   Target,
   Tv,
@@ -42,15 +48,27 @@ export function DashboardPage() {
   const [items, setItems] = useState<MediaRecord[]>([]);
   const [goals, setGoals] = useState<AnnualGoal[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [mediaError, setMediaError] = useState('');
+  const [goalsError, setGoalsError] = useState('');
+  const [retry, setRetry] = useState(0);
+  const [editingProgress, setEditingProgress] = useState<MediaRecord | null>(null);
 
   useEffect(() => {
     let active = true;
-    void Promise.all([listMedia(), listAnnualGoals()]).then(([records, savedGoals]) => { if (active) { setItems(records); setGoals(savedGoals); } })
-      .catch((reason: unknown) => { if (active) setError(reason instanceof Error ? reason.message : 'Não foi possível carregar suas estatísticas.'); })
-      .finally(() => { if (active) setLoading(false); });
+    setLoading(true);
+    void Promise.allSettled([listMedia(), listAnnualGoals()]).then(([mediaResult, goalsResult]) => {
+      if (!active) return;
+      if (mediaResult.status === 'fulfilled') {
+        setItems(mediaResult.value);
+        setMediaError('');
+      } else setMediaError(getMediaError(mediaResult.reason));
+      if (goalsResult.status === 'fulfilled') {
+        setGoals(goalsResult.value);
+        setGoalsError('');
+      } else setGoalsError(getMediaError(goalsResult.reason));
+    }).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, []);
+  }, [retry]);
 
   const years = getAvailableYears(items, goals, year);
   const statistics = calculateYearStatistics(items, year);
@@ -141,7 +159,8 @@ export function DashboardPage() {
         <Link className="text-link" to="/metas">Ver metas <ArrowRight size={16} /></Link>
       </div>
 
-      {error && <p className="media-alert media-alert--error" role="alert">{error}</p>}
+      {mediaError && <RetryNotice message={`Coleção: ${mediaError}`} onRetry={() => setRetry(value => value + 1)} />}
+      {goalsError && <RetryNotice message={`Metas: ${goalsError}`} onRetry={() => setRetry(value => value + 1)} />}
       <section className="stats-grid" aria-label="Resumo anual">
         {summaryCards.map(({ label, detail, icon: Icon, kind }) => {
           const count = kind === 'book' ? statistics.counts.books : kind === 'movie' ? statistics.counts.movies : statistics.counts.series;
@@ -150,7 +169,7 @@ export function DashboardPage() {
               <span className="stat-card__icon"><Icon size={21} strokeWidth={1.65} /></span>
               <span className="stat-card__state"><span /> {loading ? 'CARREGANDO' : count === 0 ? 'SEM REGISTROS' : 'REGISTROS REAIS'}</span>
             </div>
-            <p className="stat-card__value" aria-label={`${label}: ${count}`}>{loading || error ? '—' : count}</p>
+            <p className="stat-card__value" aria-label={`${label}: ${count}`}>{loading || mediaError ? '—' : count}</p>
             <h3>{label}</h3>
             <p className="stat-card__detail">{detail}</p>
           </article>;
@@ -162,7 +181,7 @@ export function DashboardPage() {
           <div><span className="section-kicker">SEUS OBJETIVOS</span><h2>Metas de {year}</h2></div>
           <Link to="/metas" className="text-link">{selectedGoal ? 'Editar metas' : 'Definir metas'} <ArrowRight size={16} /></Link>
         </div>
-        {!loading && !error && categories.some(({ field }) => (selectedGoal?.[field] ?? 0) > 0) ? (
+        {!loading && !mediaError && !goalsError && categories.some(({ field }) => (selectedGoal?.[field] ?? 0) > 0) ? (
           <div className="acervo-dashboard-goals__grid">
             {categories.map(({ field, label }) => {
               const target = selectedGoal?.[field] ?? 0;
@@ -179,7 +198,7 @@ export function DashboardPage() {
             })}
           </div>
         ) : (
-          <p className="acervo-dashboard-goals__empty">{loading ? 'Carregando metas…' : error ? 'As metas não puderam ser carregadas.' : 'Você ainda não definiu metas para este ano. Defina objetivos personalizados quando quiser.'}</p>
+          <p className="acervo-dashboard-goals__empty">{loading ? 'Carregando metas…' : goalsError || mediaError ? 'As metas não puderam ser carregadas.' : 'Você ainda não definiu metas para este ano. Defina objetivos personalizados quando quiser.'}</p>
         )}
       </section>
 
@@ -192,18 +211,22 @@ export function DashboardPage() {
             </div>
             <span className="panel__badge"><Play size={12} fill="currentColor" /> CONTINUAR</span>
           </div>
-          {ongoing.length ? <div className="dashboard-mini-list">
-            {ongoing.map((item) => <Link key={item.id} to={`/colecao/${item.id}`}>
-              <MediaCover
-                className="dashboard-mini-list__cover"
-                kind={item.kind}
-                title={item.title}
-                mediaId={item.id}
-                coverId={item.coverId}
-              />
-              <span><strong>{item.title}</strong><small>{describeCategoryStatus(item.kind, item.status)}</small></span><ArrowRight size={16} />
-            </Link>)}
-          </div> : <div className="empty-state">
+          {!loading && !mediaError && ongoing.length ? <div className="dashboard-mini-list">
+            {ongoing.map((item) => <div key={item.id} className="dashboard-mini-list__entry">
+              <Link to={`/colecao/${item.id}`}>
+                <MediaCover
+                  className="dashboard-mini-list__cover"
+                  kind={item.kind}
+                  title={item.title}
+                  mediaId={item.id}
+                  coverId={item.coverId}
+                />
+                <span><strong>{item.title}</strong><small>{describeCategoryStatus(item.kind, item.status)}</small></span><ArrowRight size={16} />
+              </Link>
+              <button type="button" className="dashboard-mini-list__quick" onClick={() => setEditingProgress(item)}
+                aria-label={`Atualizar progresso de ${item.title}`} title="Atualizar progresso"><Pencil size={15} /></button>
+            </div>)}
+          </div> : loading || mediaError ? <p className="media-loading" role="status">{loading ? 'Carregando sua rotina...' : 'Não foi possível carregar sua rotina.'}</p> : <div className="empty-state">
             <span className="empty-state__icon"><LibraryBig size={28} strokeWidth={1.4} /></span>
             <h3>Suas histórias aparecerão aqui</h3>
             <p>Cadastre um título com o status “Lendo” ou “Assistindo” para acompanhá-lo.</p>
@@ -218,7 +241,7 @@ export function DashboardPage() {
             </div>
             <Link className="icon-link" to="/desejos" aria-label="Abrir lista de desejos"><ArrowRight size={19} /></Link>
           </div>
-          {wishlist.length ? <div className="dashboard-mini-list">
+          {!loading && !mediaError && wishlist.length ? <div className="dashboard-mini-list">
             {wishlist.map((item) => <Link key={item.id} to={`/colecao/${item.id}`}>
               <MediaCover
                 className="dashboard-mini-list__cover"
@@ -229,7 +252,7 @@ export function DashboardPage() {
               />
               <span><strong>{item.title}</strong><small>{describeCategoryStatus(item.kind, item.status)}</small></span><ArrowRight size={16} />
             </Link>)}
-          </div> : <div className="empty-state">
+          </div> : loading || mediaError ? <p className="media-loading" role="status">{loading ? 'Carregando lista de desejos...' : 'Não foi possível carregar sua lista de desejos.'}</p> : <div className="empty-state">
             <span className="empty-state__icon"><Bookmark size={28} strokeWidth={1.4} /></span>
             <h3>Um mundo de possibilidades</h3>
             <p>Os títulos com status “Quero ler” ou “Quero assistir” aparecerão aqui.</p>
@@ -242,6 +265,15 @@ export function DashboardPage() {
         <p><strong>Seu ritmo, suas metas.</strong> O importante não é consumir mais, mas aproveitar melhor cada história.</p>
         <span className="closing-note__check"><Check size={15} /> SEM PRESSA</span>
       </div>
+      {editingProgress && <QuickProgressDialog key={editingProgress.id} item={editingProgress}
+        onClose={() => setEditingProgress(null)}
+        onSave={async patch => {
+          try {
+            const saved = await updateMedia(editingProgress.id, { ...editingProgress, ...patch });
+            setItems(previous => previous.map(record => record.id === saved.id ? saved : record));
+            return null;
+          } catch (reason) { return getMediaError(reason); }
+        }} />}
     </div>
   );
 }

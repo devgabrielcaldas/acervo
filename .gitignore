@@ -70,3 +70,9 @@ LEIA-ME*.md
 # Instalador auxiliar da mascara de tempo
 /.acervo-mascara/
 *.antes-mascara.bak
+
+# Pacote e backups da etapa 10
+/.acervo-etapa10/
+
+# Instalador auxiliar da correção de capas
+/.acervo-fix-capa/

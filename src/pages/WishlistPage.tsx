@@ -7,6 +7,9 @@ import { CompleteMediaDialog } from '../components/media/CompleteMediaDialog';
 import { StartMediaDialog } from '../components/media/StartMediaDialog';
 import { getMediaError } from '../hooks/useMediaLibrary';
 import { updateMedia } from '../services/mediaRepository';
+import { matchesMediaSearch } from '../utils/searchMedia';
+import { MediaGridSkeleton } from '../components/media/MediaGridSkeleton';
+import { RetryNotice } from '../components/common/RetryNotice';
 
 import { MediaCard } from '../components/media/MediaCard';
 import { useMediaLibrary } from '../hooks/useMediaLibrary';
@@ -28,12 +31,10 @@ export function WishlistPage() {
 
   const wishlist = useMemo(() => items.filter((item) => item.status === 'wishlist'), [items]);
   const visible = useMemo(() => {
-    const query = search.trim().toLocaleLowerCase('pt-BR');
     return wishlist.filter((item) =>
       (kind === 'all' || item.kind === kind) &&
       (priority === 'all' || item.priority === priority) &&
-      (!query || [item.title, item.kind === 'book' ? item.author : item.kind === 'movie' ? item.director : '', ...item.genres]
-        .join(' ').toLocaleLowerCase('pt-BR').includes(query)),
+      matchesMediaSearch(item, search),
     ).sort((a, b) => {
       if (sort === 'title') return a.title.localeCompare(b.title, 'pt-BR');
       if (sort === 'recent') return b.createdAt.localeCompare(a.createdAt);
@@ -91,8 +92,8 @@ export function WishlistPage() {
         <span className="section-kicker">{loading ? 'CARREGANDO...' : `${visible.length} ${visible.length === 1 ? 'TÍTULO' : 'TÍTULOS'}`}</span>
         {hasFilters && <button type="button" className="collection-clear" onClick={clearFilters}>Limpar filtros <ArrowRight size={14} /></button>}
       </div>
-      {error && <p className="media-alert media-alert--error" role="alert">{error}</p>}
-      {loading ? <div className="collection-empty" role="status">Carregando seus desejos...</div> : visible.length ? (
+      {error && <RetryNotice message={error} onRetry={() => { void refresh().catch(() => {}); }} />}
+      {loading ? <MediaGridSkeleton count={6} /> : visible.length ? (
         <div className="media-grid acervo-action-grid">
           {visible.map((item) => (
             <div className="acervo-action-item" key={item.id}>
@@ -119,7 +120,7 @@ export function WishlistPage() {
             </div>
           ))}
         </div>
-      ) : (
+      ) : error ? null : (
         <div className="collection-empty">
           <div className="collection-empty__icon"><Bookmark size={30} /></div>
           <h2>{wishlist.length ? 'Nenhum título encontrado' : 'O que vem a seguir?'}</h2>
