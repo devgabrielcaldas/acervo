@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { BookOpen, ImageOff, Pencil, Plus, RefreshCw, Save, Trash2, Users, X } from 'lucide-react';
 import type { BookCharacter, MediaRecord } from '../../types/media';
 import { updateMedia } from '../../services/mediaRepository';
+import { downloadCatalogCover } from '../../services/catalogClient';
 import { loadTitleCast } from '../../services/titlePeopleCatalog';
 import type { CastPerson, TitleCast } from '../../services/titlePeopleCatalog';
 import { cleanBookCharacters, safeTmdbProfileUrl } from '../../utils/titlePeople';
@@ -11,11 +12,56 @@ function errorMessage(error: unknown): string {
 }
 
 function Portrait({ person }: { person: CastPerson }) {
-  const [broken, setBroken] = useState(false);
   const photo = safeTmdbProfileUrl(person.profilePath);
+  const [src, setSrc] = useState<string | undefined>(photo);
+  const [loaded, setLoaded] = useState(false);
+  const [proxying, setProxying] = useState(false);
+  const [unavailable, setUnavailable] = useState(!photo);
+
+  useEffect(() => {
+    setSrc(photo);
+    setLoaded(false);
+    setProxying(false);
+    setUnavailable(!photo);
+  }, [photo]);
+
+  // Algumas versões do Safari/WebKit deixam imagens lazy sem iniciar o download
+  // em grids responsivos. Se o carregamento direto travar, usamos o proxy seguro
+  // já existente na Edge Function catalog (sem novas chaves nem deploy).
+  useEffect(() => {
+    if (!photo || loaded || proxying || unavailable) return;
+    const timer = window.setTimeout(() => setProxying(true), 6500);
+    return () => window.clearTimeout(timer);
+  }, [photo, loaded, proxying, unavailable]);
+
+  useEffect(() => {
+    if (!photo || !proxying) return;
+    let active = true;
+    let blobUrl: string | undefined;
+    void downloadCatalogCover(photo).then(file => {
+      const url = URL.createObjectURL(file);
+      if (!active) { URL.revokeObjectURL(url); return; }
+      blobUrl = url;
+      setSrc(url);
+      setLoaded(false);
+    }).catch(() => { if (active) setUnavailable(true); });
+    return () => {
+      active = false;
+      if (blobUrl) URL.revokeObjectURL(blobUrl);
+    };
+  }, [photo, proxying]);
+
   return <div className="acervo-people__portrait">
-    {photo && !broken ? <img src={photo} alt={`Foto de ${person.name}`} loading="lazy" decoding="async" referrerPolicy="no-referrer" onError={() => setBroken(true)} />
-      : <ImageOff size={23} strokeWidth={1.4} aria-hidden="true" />}
+    {src && !unavailable ? <img
+      src={src}
+      alt={`Foto de ${person.name}`}
+      width={185} height={278}
+      loading="eager" decoding="async" referrerPolicy="no-referrer"
+      className={loaded ? 'acervo-people__portrait-image--loaded' : undefined}
+      onLoad={() => { setLoaded(true); setUnavailable(false); }}
+      onError={() => { if (src?.startsWith('blob:')) setUnavailable(true); else setProxying(true); }}
+    /> : <ImageOff size={23} strokeWidth={1.4} aria-label="Foto indisponível" />}
+    {src && !loaded && !unavailable && <span className="acervo-people__portrait-loading" aria-hidden="true" />}
   </div>;
 }
 
