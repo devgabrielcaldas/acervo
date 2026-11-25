@@ -66,3 +66,7 @@ LEIA-ME*.md
 
 # Instaladores e backups da home compacta
 /.acervo-hero/
+
+# Instalador auxiliar da mascara de tempo
+/.acervo-mascara/
+*.antes-mascara.bak

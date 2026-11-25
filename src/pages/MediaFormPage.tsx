@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { ArrowLeft, BookOpen, Check, Film, ImagePlus, Save, Trash2, Tv } from 'lucide-react';
 import { Link, useNavigate, useParams } from 'react-router';
+import { PlaybackTimeInput } from '../components/media/PlaybackTimeInput';
 import { MediaCover } from '../components/media/MediaCover';
 import { RatingStars } from '../components/media/RatingStars';
 import { CatalogSearch } from '../components/media/CatalogSearch';
@@ -407,9 +408,8 @@ export function MediaFormPage() {
               </>}
               {(values.kind === 'movie' || values.kind === 'series') && (values.status === 'in_progress' || values.status === 'paused') &&
                 <label className="media-field"><span>{values.kind === 'movie' ? 'Parei no filme em' : 'Parei no episódio em'} (HH:MM:SS)</span>
-                  <input type="text" inputMode="numeric" pattern="[0-9]{1,2}:[0-9]{2}:[0-9]{2}" placeholder="00:48:40" value={values.pausedAt}
-                    onChange={(e) => change('pausedAt', e.target.value)} />
-                  <small>É a posição da reprodução, não a duração total. Ex.: 00:48:40.</small>
+                  <PlaybackTimeInput value={values.pausedAt} onChange={next => change('pausedAt', next)} disabled={saving} />
+                  <small>Digite só números: 011740 vira 01:17:40. Também aceita 0117 para 01:17:00.</small>
                 </label>}
               <label className="media-field media-field--wide"><span>Minha opinião / anotações</span>
                 <textarea rows={5} value={values.notes} placeholder="O que essa história te fez sentir?" onChange={(event) => change('notes', event.target.value)} /></label>

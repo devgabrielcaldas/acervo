@@ -3,6 +3,7 @@ import type { FormEvent, KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { BookOpen, CheckCircle2, Clock3, Film, Pencil, Save, Tv, X } from 'lucide-react';
 import { Link } from 'react-router';
+import { PlaybackTimeInput } from './PlaybackTimeInput';
 import { RatingStars } from './RatingStars';
 import type { MediaRecord } from '../../types/media';
 import { mediaProgress } from '../../utils/progress';
@@ -133,19 +134,16 @@ export function QuickProgressDialog({ item, onClose, onSave }: Props) {
                 </label>
               </div>
               <label className="media-field"><span><Clock3 size={15} aria-hidden="true"/> Posição no episódio em andamento (opcional)</span>
-                <input type="text" inputMode="numeric" autoComplete="off" placeholder="00:48:40"
-                  value={values.pausedAt} onChange={e => change('pausedAt',e.target.value)}/>
-                <small>Marque quantos episódios terminou. Se parou no seguinte, informe o tempo em HH:MM:SS. Deixe vazio para remover a pausa.</small>
+                <PlaybackTimeInput value={values.pausedAt} onChange={next => change('pausedAt', next)} disabled={saving} />
+                <small>Marque os episódios concluídos e digite apenas os números da pausa (ex.: 001800). Deixe vazio para remover.</small>
               </label>
               <p className="acervo-quick-note">Ex.: concluiu 2 de 10 episódios e parou em 00:18:00 do episódio 3? Informe 2 e 00:18:00.</p>
             </>}
 
             {item.kind === 'movie' && <>
               <label className="media-field"><span><Clock3 size={15} aria-hidden="true"/> Posição em que parou (HH:MM:SS)</span>
-                <input type="text" inputMode="numeric"
-                  autoComplete="off" placeholder="00:48:40" value={values.pausedAt}
-                  onChange={e => change('pausedAt',e.target.value)}/>
-                <small>Deixe vazio para remover a posição registrada.</small>
+                <PlaybackTimeInput value={values.pausedAt} onChange={next => change('pausedAt', next)} disabled={saving} />
+                <small>Digite 6 números: 011740 vira 01:17:40. Ou 0117 para 01:17:00. Deixe vazio para remover.</small>
               </label>
               <label className="media-field"><span>Duração total (minutos)</span>
                 <input type="number" min="1" step="1" inputMode="numeric" placeholder="Ex.: 139"

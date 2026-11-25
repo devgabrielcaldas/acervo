@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import type { FormEvent, KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { createPortal } from 'react-dom';
+import { PlaybackTimeInput } from './PlaybackTimeInput';
 import { BookOpen, Clock3, Film, Play, Tv, X } from 'lucide-react';
 import type { MediaRecord } from '../../types/media';
 import { mediaProgress } from '../../utils/progress';
@@ -106,8 +107,8 @@ export function StartMediaDialog({ item, onClose, onSave }: Props) {
             </>}
             {item.kind === 'movie' && <>
               <label className="media-field"><span><Clock3 size={15} aria-hidden="true"/> Posição do filme (HH:MM:SS)</span>
-                <input type="text" inputMode="numeric" value={draft.pausedAt} onChange={event => change('pausedAt', event.target.value)} placeholder="00:00:00" />
-                <small>Se ainda não começou a assistir, deixe em branco.</small>
+                <PlaybackTimeInput value={draft.pausedAt} onChange={next => change('pausedAt', next)} disabled={saving} />
+                <small>Digite somente números (011740 vira 01:17:40). Deixe em branco se ainda não começou.</small>
               </label>
               <label className="media-field"><span>Duração total (minutos)</span>
                 <input type="number" min="1" step="1" inputMode="numeric" value={draft.durationMinutes}
@@ -123,7 +124,7 @@ export function StartMediaDialog({ item, onClose, onSave }: Props) {
                     onChange={event => change('totalEpisodes', event.target.value)} placeholder="Ex.: 10" /></label>
               </div>
               <label className="media-field"><span><Clock3 size={15} aria-hidden="true"/> Posição no próximo episódio (opcional)</span>
-                <input type="text" inputMode="numeric" value={draft.pausedAt} onChange={event => change('pausedAt', event.target.value)} placeholder="00:18:00" />
+                <PlaybackTimeInput value={draft.pausedAt} onChange={next => change('pausedAt', next)} disabled={saving} />
                 <small>O percentual da série considera somente os episódios concluídos.</small>
               </label>
             </>}
