@@ -1,0 +1,82 @@
+/* Etapa 14 · refinamento do Calendário: apenas apresentação, sem novas tabelas. */
+.acervo-calendar-page {
+  --acervo-cal-book: var(--accent);
+  --acervo-cal-movie: #9bbde9;
+  --acervo-cal-series: #8bc9a6;
+  --acervo-cal-completed: #90ceaa;
+}
+:root[data-theme='light'] .acervo-calendar-page {
+  --acervo-cal-movie: #365f9d;
+  --acervo-cal-series: #25734d;
+  --acervo-cal-completed: #27724b;
+}
+
+/* Legenda e pontos por categoria, inclusive em dias com mídias diferentes. */
+.acervo-calendar-kind-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin: -5px 0 15px;
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.4;
+}
+.acervo-calendar-kind-legend > span { display:inline-flex; align-items:center; gap:6px; }
+.acervo-calendar-kind-dot { display:block; flex:0 0 auto; width:7px; height:7px; border-radius:100%; }
+.acervo-calendar-kind-dot--book { background:var(--acervo-cal-book); }
+.acervo-calendar-kind-dot--movie { background:var(--acervo-cal-movie); }
+.acervo-calendar-kind-dot--series { background:var(--acervo-cal-series); }
+.acervo-calendar-day__kinds { display:flex; align-items:center; justify-content:center; height:7px; gap:3px; }
+.acervo-calendar-day__kinds .acervo-calendar-kind-dot { width:5px; height:5px; }
+.acervo-calendar-day--movie small { background:var(--acervo-cal-movie); color:#111a23; }
+.acervo-calendar-day--series small { background:var(--acervo-cal-series); color:#102018; }
+:root[data-theme='light'] .acervo-calendar-day--movie small,
+:root[data-theme='light'] .acervo-calendar-day--series small { color:white; }
+.acervo-calendar-day--movie.has-activity { border-color:color-mix(in srgb,var(--acervo-cal-movie) 50%,var(--border)); }
+.acervo-calendar-day--series.has-activity { border-color:color-mix(in srgb,var(--acervo-cal-series) 50%,var(--border)); }
+.acervo-calendar-day.is-selected { border-color:var(--accent); }
+
+/* Chips: livros dourados, episódios de série verdes; avanço de reprodução
+   pode incluir filmes OU séries e por isso é exibido em tom neutro. */
+.acervo-calendar-quantities .acervo-calendar-quantity--book { color:var(--acervo-cal-book); }
+.acervo-calendar-quantities .acervo-calendar-quantity--book svg { color:var(--acervo-cal-book); }
+.acervo-calendar-quantities .acervo-calendar-quantity--series { color:var(--acervo-cal-series); }
+.acervo-calendar-quantities .acervo-calendar-quantity--series svg { color:var(--acervo-cal-series); }
+.acervo-calendar-quantities .acervo-calendar-quantity--playback { color:var(--text-muted); }
+.acervo-calendar-quantities .acervo-calendar-quantity--playback svg { color:var(--text-muted); }
+.acervo-calendar-quantities .acervo-calendar-quantity--completion { color:var(--acervo-cal-completed); }
+.acervo-calendar-quantities .acervo-calendar-quantity--completion svg { color:var(--acervo-cal-completed); }
+
+/* Eventos: preserva a capa sem deformá-la e mantém o fallback do MediaCover. */
+.acervo-calendar-entries li.acervo-calendar-entry { position:relative; gap:13px; padding:17px 0 17px 10px; }
+.acervo-calendar-entry::before { content:''; position:absolute; left:0; top:18px; bottom:18px; width:3px; border-radius:4px; background:var(--acervo-cal-entry-color); }
+.acervo-calendar-entry--book { --acervo-cal-entry-color:var(--acervo-cal-book); }
+.acervo-calendar-entry--movie { --acervo-cal-entry-color:var(--acervo-cal-movie); }
+.acervo-calendar-entry--series { --acervo-cal-entry-color:var(--acervo-cal-series); }
+.acervo-calendar-entry__cover {
+  display:block; flex:0 0 54px; width:54px; height:78px; min-width:0;
+  border-radius:8px; border:1px solid var(--border);
+  background:var(--surface-soft); overflow:hidden;
+}
+.acervo-calendar-entry__cover .media-cover { width:100%; height:100%; aspect-ratio:auto; border-radius:0; }
+.acervo-calendar-entry__cover .media-cover img { display:block; height:100%; width:100%; object-fit:cover; object-position:center; }
+.acervo-calendar-entry__cover .media-cover__fallback { padding:0; gap:0; }
+.acervo-calendar-entry__cover .media-cover__fallback svg { width:24px; height:24px; color:var(--acervo-cal-entry-color); }
+.acervo-calendar-entry__cover .media-cover__fallback > span,
+.acervo-calendar-entry__cover .media-cover__fallback > small { display:none; }
+.acervo-calendar-entry .acervo-calendar-entry__type { color:var(--acervo-cal-entry-color); font-weight:750; }
+.acervo-calendar-entry .acervo-calendar-entry__description { color:var(--text-muted); }
+.acervo-calendar-entry .acervo-calendar-entry__text { min-width:0; }
+.acervo-calendar-entry .acervo-calendar-entry__text > div { min-width:0; }
+.acervo-calendar-entry .acervo-calendar-entry__text strong { min-width:0; }
+
+@media (max-width:520px) {
+  .acervo-calendar-kind-legend { margin-top:-3px; gap:7px 11px; font-size:10px; }
+  .acervo-calendar-day.has-activity { min-height:43px; }
+  .acervo-calendar-entries li.acervo-calendar-entry { gap:10px; padding-left:8px; }
+  .acervo-calendar-entry__cover { flex-basis:45px; width:45px; height:66px; }
+  .acervo-calendar-entry .acervo-calendar-entry__text > div { flex-wrap:wrap; row-gap:4px; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .acervo-calendar-entry__cover, .acervo-calendar-day { transition:none; }
+}

@@ -4,23 +4,27 @@ import {
   ChevronRight, Clapperboard, Flame, RefreshCw, Tv,
 } from 'lucide-react';
 import { listActivityEvents } from '../services/activityRepository';
+import { cloudCoverRows } from '../services/cloudRepository';
+import { MediaCover } from '../components/media/MediaCover';
 import {
   activityEventsFor, brasiliaDate, daysInMonth, describeActivity, exportActivitiesJson,
   formatDuration, formatMonthTitle, leadingDays, summarizeActivities,
 } from '../utils/activityMetrics';
 import type { ActivityEvent, ActivityFilter, ActivityKind } from '../utils/activityMetrics';
 import '../styles/calendar14.css';
+import '../styles/calendar14-visual.css';
 
 const weekDays = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
 const filters: { id: ActivityFilter; label: string }[] = [
   { id: 'all', label: 'Todas' }, { id: 'book', label: 'Leituras' },
   { id: 'movie', label: 'Filmes' }, { id: 'series', label: 'Séries' },
 ];
-const kinds: Record<ActivityKind, { label: string; icon: typeof BookOpen }> = {
-  book: { label: 'Livro', icon: BookOpen },
-  movie: { label: 'Filme', icon: Clapperboard },
-  series: { label: 'Série', icon: Tv },
+const kinds: Record<ActivityKind, { label: string }> = {
+  book: { label: 'Livro' },
+  movie: { label: 'Filme' },
+  series: { label: 'Série' },
 };
+const calendarKindOrder: readonly ActivityKind[] = ['book', 'movie', 'series'];
 const isoDay = (year: number, month: number, day: number) =>
   `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 
@@ -43,14 +47,25 @@ export function CalendarPage() {
   const [selectedDay, setSelectedDay] = useState<string>(today);
   const [filter, setFilter] = useState<ActivityFilter>('all');
   const [events, setEvents] = useState<ActivityEvent[]>([]);
+  const [coverIds, setCoverIds] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   const refresh = useCallback(async () => {
     setLoading(true);
     setError('');
-    try { setEvents(await listActivityEvents()); }
-    catch (reason) { setError(reason instanceof Error ? reason.message : 'Não foi possível consultar o calendário.'); }
+    try {
+      // Só metadados de capas já armazenadas; RLS mantém cada conta isolada.
+      // Uma indisponibilidade das capas não deve impedir o diário de funcionar.
+      const [activityRows, coverRows] = await Promise.all([
+        listActivityEvents(),
+        cloudCoverRows().catch(() => []),
+      ]);
+      setEvents(activityRows);
+      setCoverIds(Object.fromEntries(coverRows.map(row => [row.media_id, row.id])));
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'Não foi possível consultar o calendário.');
+    }
     finally { setLoading(false); }
   }, []);
   useEffect(() => { void refresh(); }, [refresh]);
@@ -110,11 +125,11 @@ export function CalendarPage() {
         <div><span>Atualizações</span><strong>{loading ? '—' : metrics.sessions}</strong><small>eventos registrados</small></div>
       </section>
       <div className="acervo-calendar-quantities" aria-label="Totais por unidade">
-        <span><BookOpen size={15} /> {metrics.pages} páginas</span>
-        <span>{metrics.ebookPoints} pontos percentuais de e-book</span>
-        <span><Tv size={15} /> {metrics.episodes} episódios</span>
-        <span><Clapperboard size={15} /> {formatDuration(metrics.playbackSeconds)} de avanço de reprodução</span>
-        <span><CalendarCheck2 size={15} /> {metrics.completions} conclusões</span>
+        <span className="acervo-calendar-quantity--book"><BookOpen size={15} /> {metrics.pages} páginas</span>
+        <span className="acervo-calendar-quantity--book"><BookOpen size={15} /> {metrics.ebookPoints} pontos percentuais de e-book</span>
+        <span className="acervo-calendar-quantity--series"><Tv size={15} /> {metrics.episodes} episódios</span>
+        <span className="acervo-calendar-quantity--playback"><Clapperboard size={15} /> {formatDuration(metrics.playbackSeconds)} de avanço de reprodução</span>
+        <span className="acervo-calendar-quantity--completion"><CalendarCheck2 size={15} /> {metrics.completions} conclusões</span>
       </div>
 
       <div className="acervo-calendar-layout">
@@ -130,16 +145,26 @@ export function CalendarPage() {
             {filters.map(({ id, label }) => <button key={id} type="button" aria-pressed={filter === id}
               onClick={() => setFilter(id)} className={filter === id ? 'is-active' : ''}>{label}</button>)}
           </div>
+          <div className="acervo-calendar-kind-legend" aria-label="Legenda de cores das atividades">
+            <span><i className="acervo-calendar-kind-dot acervo-calendar-kind-dot--book" /> Livros</span>
+            <span><i className="acervo-calendar-kind-dot acervo-calendar-kind-dot--movie" /> Filmes</span>
+            <span><i className="acervo-calendar-kind-dot acervo-calendar-kind-dot--series" /> Séries</span>
+          </div>
           <div className="acervo-calendar-week" aria-hidden="true">{weekDays.map(day => <span key={day}>{day}</span>)}</div>
           <div className="acervo-calendar-grid">
             {calendarCells.map((day, index) => day === null ? <span className="acervo-calendar-placeholder" aria-hidden="true" key={`blank-${index}`} /> : (() => {
               const date = isoDay(year, month, day);
-              const count = byDay.get(date)?.length ?? 0;
+              const dayEvents = byDay.get(date) ?? [];
+              const count = dayEvents.length;
+              const dayKinds = calendarKindOrder.filter(category => dayEvents.some(event => event.media_kind === category));
               return <button type="button" key={date} onClick={() => setSelectedDay(date)}
-                className={`acervo-calendar-day${count ? ' has-activity' : ''}${selectedDay === date ? ' is-selected' : ''}${today === date ? ' is-today' : ''}`}
+                className={`acervo-calendar-day${count ? ' has-activity' : ''}${dayKinds.length === 1 ? ` acervo-calendar-day--${dayKinds[0]}` : ''}${selectedDay === date ? ' is-selected' : ''}${today === date ? ' is-today' : ''}`}
                 aria-pressed={selectedDay === date}
-                aria-label={`${day} de ${formatMonthTitle(year, month)}, ${count} ${count === 1 ? 'atividade' : 'atividades'}`}>
+                aria-label={`${day} de ${formatMonthTitle(year, month)}, ${count} ${count === 1 ? 'atividade' : 'atividades'}${dayKinds.length ? `: ${dayKinds.map(category => kinds[category].label).join(', ')}` : ''}`}>
                 <span>{day}</span>{count > 0 && <small>{count}</small>}
+                {dayKinds.length > 0 && <span className="acervo-calendar-day__kinds" aria-hidden="true">
+                  {dayKinds.map(category => <i key={category} className={`acervo-calendar-kind-dot acervo-calendar-kind-dot--${category}`} />)}
+                </span>}
               </button>;
             })())}
           </div>
@@ -156,14 +181,16 @@ export function CalendarPage() {
               : selectedEvents.length === 0 ? <div className="acervo-calendar-empty"><CalendarDays size={30} /><strong>Nenhuma atividade registrada</strong><p>Ao atualizar seu progresso, os avanços aparecerão automaticamente aqui.</p></div>
                 : <ol className="acervo-calendar-entries">
                   {selectedEvents.map(event => {
-                    const Icon = kinds[event.media_kind].icon;
                     const time = new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'America/Sao_Paulo' }).format(new Date(event.occurred_at));
-                    return <li key={event.id}>
-                      <span className="acervo-calendar-entry__icon"><Icon size={18} /></span>
+                    return <li key={event.id} className={`acervo-calendar-entry acervo-calendar-entry--${event.media_kind}`}>
+                      <span className="acervo-calendar-entry__cover">
+                        <MediaCover kind={event.media_kind} title={event.media_title}
+                          mediaId={event.media_id} coverId={coverIds[event.media_id]} />
+                      </span>
                       <div className="acervo-calendar-entry__text">
                         <div><strong>{event.media_title}</strong><time dateTime={event.occurred_at}>{time}</time></div>
-                        <small>{kinds[event.media_kind].label}{event.event_kind === 'completed' ? ' · Conclusão' : ' · Progresso'}</small>
-                        <p>{describeActivity(event)}</p>
+                        <small className="acervo-calendar-entry__type">{kinds[event.media_kind].label}{event.event_kind === 'completed' ? ' · Conclusão' : ' · Progresso'}</small>
+                        <p className="acervo-calendar-entry__description">{describeActivity(event)}</p>
                       </div>
                     </li>;
                   })}
