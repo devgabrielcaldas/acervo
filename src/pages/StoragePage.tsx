@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import {
-  ArrowDownToLine, ArrowRight, CheckCircle2, Database, FileCheck2, FileJson,
+  ArrowDownToLine, ArrowRight, CheckCircle2, Database, FileCheck2, FileJson, FileSpreadsheet,
   HardDrive, RefreshCw, RotateCcw, ShieldAlert, ShieldCheck, TriangleAlert, Upload,
 } from 'lucide-react';
 import { createBackupFile, prepareBackup, restoreBackup } from '../services/backupService';
 import type { PreparedBackup } from '../services/backupService';
+import { createCsvExport } from '../services/csvExportService';
 import { getStorageSummary, runStorageSelfTest } from '../services/storageDiagnostics';
 import type { StorageSummary } from '../types/media';
 
@@ -48,6 +49,7 @@ export function StoragePage() {
   const [loading, setLoading] = useState(true);
   const [testing, setTesting] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [exportingCsv, setExportingCsv] = useState(false);
   const [reading, setReading] = useState(false);
   const [restoring, setRestoring] = useState(false);
   const [result, setResult] = useState<Result>(null);
@@ -116,6 +118,27 @@ export function StoragePage() {
     }
   };
 
+  const downloadCsv = async (kind: 'catalog' | 'goals') => {
+    setExportingCsv(true);
+    setBackupResult(null);
+    try {
+      const { blob, fileName } = await createCsvExport(kind);
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = fileName;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 30_000);
+      setBackupResult({ kind: 'success', message: `Planilha ${fileName} preparada para download. Para restaurar o Acervo, continue usando o backup JSON.` });
+    } catch (error) {
+      setBackupResult({ kind: 'error', message: messageFromError(error) });
+    } finally {
+      setExportingCsv(false);
+    }
+  };
+
   const chooseFile = async (event: ChangeEvent<HTMLInputElement>) => {
     const version = ++selectionVersion.current;
     setBackupResult(null);
@@ -167,7 +190,7 @@ export function StoragePage() {
     }
   };
 
-  const busy = loading || testing || exporting || reading || restoring || needsReload;
+  const busy = loading || testing || exporting || exportingCsv || reading || restoring || needsReload;
 
   return (
     <div className="storage-page page-enter">
@@ -242,6 +265,20 @@ export function StoragePage() {
               ref={fileRef} id="acervo-backup-file" type="file" accept=".json,application/json"
               className="acervo-backup__file" disabled={busy} onChange={(event) => { void chooseFile(event); }}
             />
+          </div>
+        </div>
+
+        <div className="acervo-backup__action" style={{ marginTop: 16 }}>
+          <span className="acervo-backup__symbol"><FileSpreadsheet size={20} /></span>
+          <h3>Exportar para planilhas (CSV)</h3>
+          <p>Baixe seus títulos ou metas em CSV compatível com Excel e LibreOffice. Inclui personagens, notas e progresso, mas não contém imagens. CSV serve para consulta e organização; somente o JSON permite restaurar o Acervo.</p>
+          <div className="acervo-backup__confirm-actions">
+            <button className="btn btn--outline" type="button" disabled={busy || !summary} onClick={() => void downloadCsv('catalog')}>
+              <ArrowDownToLine size={17} /> {exportingCsv ? 'Preparando CSV...' : 'Baixar catálogo CSV'}
+            </button>
+            <button className="btn btn--outline" type="button" disabled={busy || !summary} onClick={() => void downloadCsv('goals')}>
+              <ArrowDownToLine size={17} /> {exportingCsv ? 'Preparando CSV...' : 'Baixar metas CSV'}
+            </button>
           </div>
         </div>
 

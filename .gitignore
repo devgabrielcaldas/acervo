@@ -88,3 +88,8 @@ LEIA-ME*.md
 /title-people.css
 /elenco-retratos-mobile.test.cjs
 /.acervo-retratos-mobile/
+
+# Instalador temporário da Etapa 12
+/instalar_etapa12.py
+/etapa12_payload/
+/.acervo-etapa12-backup/
