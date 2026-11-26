@@ -85,3 +85,78 @@ button:disabled { cursor: not-allowed; }
   .sidebar { transition: none; }
   .media-card:hover, .btn:hover { transform: none; }
 }
+
+/* ACERVO ETAPA 13 — correções de robustez visual. Mantém a identidade existente.
+ * Estilos aditivos, sem regras para dados, autenticação ou armazenamento.
+ */
+
+/* Itens flex e grid podem ter texto maior que a largura disponível. */
+.topbar__left, .topbar__right, .breadcrumb, .page-heading,
+.section-heading, .panel__header, .acervo-people__heading,
+.acervo-global-search__top, .acervo-global-search__description {
+  min-width: 0;
+}
+.breadcrumb strong, .page-heading h1, .section-heading h2,
+.panel__header h2, .acervo-people__heading h2 {
+  overflow-wrap: anywhere;
+}
+
+/* Alvos de toque com tamanho confortável, sem alterar o layout no desktop. */
+@media (hover: none) and (pointer: coarse) {
+  .icon-button, .sidebar__close, .topbar__menu,
+  .acervo-people__edit, .acervo-people__remove,
+  .acervo-global-search__top button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+/* Busca global: permitir rolagem dentro da janela e respeitar teclado virtual. */
+@media (max-width: 700px) {
+  .acervo-global-search-overlay {
+    padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom));
+    align-items: flex-start;
+    height: 100dvh;
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+  .acervo-global-search {
+    width: 100%;
+    max-height: calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    min-height: 0;
+  }
+  .acervo-global-search__results {
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .acervo-global-search__top { padding: 10px 12px; gap: 8px; }
+  .acervo-global-search__footer { gap: 5px; padding: 10px 12px; }
+  .acervo-global-search__footer > span:last-child { display: none; }
+  .acervo-global-search__item { min-height: 56px; }
+  .acervo-backup__action .btn, .acervo-backup__picker { min-height: 44px; }
+}
+
+/* Um único viewport não deve esconder o rodapé do modal de busca em paisagem. */
+@media (max-width: 900px) and (max-height: 460px) {
+  .acervo-global-search-overlay { padding-top: 8px; padding-bottom: 8px; }
+  .acervo-global-search { max-height: calc(100dvh - 16px); }
+}
+
+/* A barra inferior continua clicável acima da área segura do iPhone. */
+@media (max-width: 900px) {
+  .bottom-nav { padding-bottom: max(9px, env(safe-area-inset-bottom)); }
+  .main-content { padding-bottom: calc(110px + env(safe-area-inset-bottom)); }
+  #conteudo-principal { scroll-margin-top: 12px; }
+}
+
+/* Interface sem animações quando o sistema do usuário solicita redução. */
+@media (prefers-reduced-motion: reduce) {
+  .page-enter, .acervo-people__portrait-loading {
+    animation: none !important;
+  }
+  .acervo-people__portrait img, .sidebar,
+  .media-card, .btn, .icon-button {
+    transition: none !important;
+  }
+}
