@@ -110,3 +110,6 @@ LEIA-ME*.md
 
 # Instalador auxiliar da Etapa 13 - Metas
 /.acervo-metas13/
+
+# Instalador e backups locais da etapa 14
+/.acervo-etapa14/

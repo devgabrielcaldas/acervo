@@ -6,6 +6,7 @@ import { DashboardPage } from './pages/DashboardPage';
 import { CollectionPage } from './pages/CollectionPage';
 import { FavoritesPage } from './pages/FavoritesPage';
 import { HistoryPage } from './pages/HistoryPage';
+import { CalendarPage } from './pages/CalendarPage';
 import { MediaDetailPage } from './pages/MediaDetailPage';
 import { MediaFormPage } from './pages/MediaFormPage';
 import { GoalsPage } from './pages/GoalsPage';
@@ -28,6 +29,7 @@ export default function App() {
         <Route path="desejos" element={<WishlistPage />} />
         <Route path="andamento" element={<InProgressPage />} />
         <Route path="historico" element={<HistoryPage />} />
+        <Route path="calendario" element={<CalendarPage />} />
         <Route path="favoritos" element={<FavoritesPage />} />
         <Route path="metas" element={<GoalsPage />} />
         <Route path="configuracoes" element={<StoragePage />} />
