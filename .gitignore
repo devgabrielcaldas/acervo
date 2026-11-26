@@ -101,3 +101,9 @@ LEIA-ME*.md
 # Instalador temporario do dashboard da etapa 13
 /.acervo-dashboard13/
 /instalar_dashboard13.py
+
+# Instalador local da colecao - etapa 13
+/.acervo-colecao13/
+
+# Auxiliares da correcao visual da Etapa 13
+/.acervo-fix13/
