@@ -14,6 +14,8 @@ import {
 } from '../utils/statistics';
 import type { CategoryField, YearStatistics } from '../utils/statistics';
 
+import '../styles/metas-refresh13.css';
+
 const START_YEAR = new Date().getFullYear();
 
 function friendlyError(error: unknown): string {

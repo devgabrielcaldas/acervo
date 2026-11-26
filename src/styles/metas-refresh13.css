@@ -1,0 +1,215 @@
+/* ACERVO · ETAPA 13 / METAS — acabamento isolado da página de Metas e Estatísticas.
+   Nenhuma regra abaixo altera o dashboard, as fórmulas ou o armazenamento. */
+.acervo-goals-page {
+  --metas-gold: var(--accent);
+  --metas-surface: var(--surface);
+  --metas-line: var(--border);
+  max-width: 1450px;
+}
+.acervo-goals-page .page-heading {
+  align-items: center;
+  padding-bottom: 4px;
+}
+.acervo-goals-page .page-heading h1 {
+  font-family: var(--font-editorial);
+  font-weight: 500;
+  font-size: clamp(32px, 3.5vw, 49px);
+  line-height: 1.12;
+  letter-spacing: -1.05px;
+}
+.acervo-goals-page .page-heading p { max-width: 620px; }
+.acervo-goals-page .acervo-goal-years {
+  flex: 0 0 auto;
+  padding: 6px;
+  border-radius: 13px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.08);
+}
+.acervo-goals-page .acervo-goal-years button { width: 39px; height: 39px; }
+.acervo-goals-page .acervo-goal-years input { width: 84px; font-size: 17px; font-variant-numeric: tabular-nums; }
+
+/* Visão anual: editorial + métricas visíveis sem depender de imagens decorativas. */
+.acervo-goals-page .acervo-goals-overview {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  grid-template-columns: minmax(0,1fr) minmax(125px,.26fr) minmax(145px,.34fr);
+  gap: clamp(18px,3vw,48px);
+  min-height: 210px;
+  padding: clamp(24px,3.2vw,42px);
+  border-color: color-mix(in srgb, var(--accent) 31%, var(--border));
+  border-radius: 20px;
+  background: radial-gradient(ellipse at 87% 6%,var(--accent-soft),transparent 52%),linear-gradient(112deg,var(--surface),var(--surface-soft));
+}
+.acervo-goals-page .acervo-goals-overview::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--accent);
+  pointer-events: none;
+}
+.acervo-goals-page .acervo-goals-overview > div:first-child { min-width: 0; }
+.acervo-goals-page .acervo-goals-overview h2 {
+  font-size: clamp(29px,2.8vw,40px);
+  line-height: 1.13;
+  letter-spacing: -.75px;
+  margin: 11px 0 13px;
+}
+.acervo-goals-page .acervo-goals-overview p { line-height: 1.75; }
+.acervo-goals-page .acervo-goals-overview__metric {
+  min-width: 0;
+  gap: 10px;
+  padding: 15px 0 15px 24px;
+  text-align: left;
+  border-left: 1px solid var(--border);
+}
+.acervo-goals-page .acervo-goals-overview__metric strong {
+  font-size: clamp(35px,4.2vw,61px);
+  line-height: 1;
+  font-weight: 650;
+  letter-spacing: -1.8px;
+  font-variant-numeric: tabular-nums;
+}
+.acervo-goals-page .acervo-goals-overview__metric span {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+/* Metas: cartões com hierarquia, barra e estado legível em ambos os temas. */
+.acervo-goals-page .acervo-goal-cards { gap: 15px; margin-top: 17px; }
+.acervo-goals-page .acervo-goal-card {
+  position: relative;
+  overflow: hidden;
+  padding: 25px 23px 21px;
+  border-radius: 17px;
+  background: linear-gradient(152deg,var(--surface),var(--surface-soft));
+  transition: border-color .2s ease, transform .2s ease;
+}
+.acervo-goals-page .acervo-goal-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg,var(--accent),transparent 76%);
+}
+.acervo-goals-page .acervo-goal-card:hover { border-color: color-mix(in srgb,var(--accent) 42%,var(--border)); }
+.acervo-goals-page .acervo-goal-card__header { color: var(--text); font-size: 13px; }
+.acervo-goals-page .acervo-goal-card__header svg { width: 20px; height: 20px; }
+.acervo-goals-page .acervo-goal-card__numbers { margin-top: 24px; gap: 10px; }
+.acervo-goals-page .acervo-goal-card__numbers strong {
+  font-size: clamp(37px,3.3vw,47px);
+  line-height: 1.08;
+  letter-spacing: -1.8px;
+  font-variant-numeric: tabular-nums;
+}
+.acervo-goals-page .acervo-goal-card__numbers span { font-size: 14px; }
+.acervo-goals-page .acervo-goal-card .acervo-progress { height: 9px; margin: 21px 0 15px; }
+.acervo-goals-page .acervo-goal-card .acervo-progress span { background: linear-gradient(90deg,var(--accent),var(--accent-strong)); }
+.acervo-goals-page .acervo-goal-card__foot { align-items: start; line-height: 1.5; }
+.acervo-goals-page .acervo-goal-card__foot strong { font-size: 14px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.acervo-goals-page .acervo-goals-disclaimer { margin: 13px 3px 30px; }
+
+/* Editor: conteúdo em primeiro plano e ações bem separadas. */
+.acervo-goals-page .acervo-goal-editor {
+  padding: clamp(20px,2.5vw,31px);
+  border-radius: 17px;
+  background: var(--surface);
+}
+.acervo-goals-page .acervo-goal-editor__intro { align-items: center; }
+.acervo-goals-page .acervo-goal-editor__intro h2 { font-size: clamp(19px,2vw,23px); }
+.acervo-goals-page .acervo-goal-chip { background: var(--accent-soft); }
+.acervo-goals-page .acervo-goal-editor__inputs { margin-top: 24px; gap: 12px; }
+.acervo-goals-page .acervo-goal-editor__input { min-width: 0; }
+.acervo-goals-page .acervo-goal-editor__input input { min-width: 0; min-height: 46px; border-radius: 10px; }
+.acervo-goals-page .acervo-goal-editor__footer { border-top: 1px solid var(--border); padding-top: 19px; }
+
+/* Gráficos: reduzir ruído, aumentar legibilidade de linhas e legendas. */
+.acervo-goals-page .acervo-goals-charts { gap: 17px; margin-top: 20px; }
+.acervo-goals-page .acervo-stat-panel {
+  padding: clamp(20px,2.3vw,29px);
+  border-radius: 17px;
+}
+.acervo-goals-page .acervo-stat-panel__heading h2 { font-size: clamp(18px,1.8vw,22px); }
+.acervo-goals-page .acervo-stat-legend {
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  margin: 23px 0;
+}
+.acervo-goals-page .acervo-stat-legend span { color: var(--text-muted); }
+.acervo-goals-page .acervo-month-chart { gap: 0; }
+.acervo-goals-page .acervo-month-chart__row {
+  min-height: 37px;
+  gap: 14px;
+  grid-template-columns: 41px minmax(0,1fr) 35px 37px;
+  border-top: 1px solid var(--border);
+}
+.acervo-goals-page .acervo-month-chart__row:last-child { border-bottom: 1px solid var(--border); }
+.acervo-goals-page .acervo-month-chart__bars { gap: 4px; }
+.acervo-goals-page .acervo-month-chart__bar { height: 6px; }
+.acervo-goals-page .acervo-month-chart__total { color: var(--text); font-weight: 750; }
+.acervo-goals-page .acervo-metric { align-items: baseline; gap: 13px; flex-wrap: wrap; margin: 22px 0 23px; }
+.acervo-goals-page .acervo-metric strong { font-size: 49px; line-height: 1; font-variant-numeric: tabular-nums; }
+.acervo-goals-page .acervo-ratings-chart { gap: 11px; }
+.acervo-goals-page .acervo-ratings-chart__row { grid-template-columns: 35px minmax(0,1fr) 30px; gap: 11px; }
+.acervo-goals-page .acervo-ratings-chart__track { height: 9px; }
+.acervo-goals-page .acervo-stat-note { line-height: 1.8; }
+
+/* Ano a ano: tabela com alinhamento numérico e leitura de linhas. */
+.acervo-goals-page .acervo-goals-comparison-heading { margin-top: 40px; margin-bottom: 18px; }
+.acervo-goals-page .acervo-comparison-scroll { max-width: 100%; }
+.acervo-goals-page .acervo-comparison-table { font-variant-numeric: tabular-nums; }
+.acervo-goals-page .acervo-comparison-table th,
+.acervo-goals-page .acervo-comparison-table td { padding: 16px 13px; }
+.acervo-goals-page .acervo-comparison-table tbody tr:hover { background: var(--surface-soft); }
+.acervo-goals-page .acervo-comparison-table thead th { color: var(--text-muted); }
+.acervo-goals-page .acervo-comparison-table__total { background: var(--accent-soft); }
+.acervo-goals-page .acervo-comparison-table__total th,
+.acervo-goals-page .acervo-comparison-table__total td { color: var(--accent-strong); font-weight: 750; }
+.acervo-goals-page .acervo-goals-footnote { padding-bottom: 5px; }
+
+@media (max-width: 980px) {
+  .acervo-goals-page .acervo-goals-overview { grid-template-columns: minmax(0,1fr) minmax(105px,.35fr) minmax(120px,.4fr); gap: 18px; }
+  .acervo-goals-page .acervo-goals-overview__metric { padding-left: 17px; }
+  .acervo-goals-page .acervo-goal-card { padding: 20px 17px 18px; }
+}
+@media (max-width: 800px) {
+  .acervo-goals-page .acervo-goals-overview { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .acervo-goals-page .acervo-goals-overview > div:first-child { grid-column: 1/-1; }
+  .acervo-goals-page .acervo-goals-overview__metric { padding-left: 16px; }
+  .acervo-goals-page .acervo-goal-cards { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 9px; }
+  .acervo-goals-page .acervo-goal-card__numbers { flex-wrap: wrap; }
+}
+@media (max-width: 700px) {
+  .acervo-goals-page .page-heading { align-items: flex-start; }
+  .acervo-goals-page .acervo-goal-cards { grid-template-columns: minmax(0,1fr); gap: 12px; }
+  .acervo-goals-page .acervo-goal-card { padding: 20px; }
+  .acervo-goals-page .acervo-goal-card__numbers { margin-top: 14px; }
+  .acervo-goals-page .acervo-goal-card .acervo-progress { margin: 13px 0 10px; }
+  .acervo-goals-page .acervo-goals-comparison-heading { align-items: stretch; }
+  .acervo-goals-page .acervo-goals-comparison-heading .media-field { min-width: 0; }
+}
+@media (max-width: 520px) {
+  .acervo-goals-page .page-heading { gap: 17px; flex-direction: column; align-items: stretch; }
+  .acervo-goals-page .page-heading h1 { font-size: clamp(29px,7vw,35px); }
+  .acervo-goals-page .acervo-goal-years { align-self: flex-start; }
+  .acervo-goals-page .acervo-goals-overview { padding: 23px 19px; gap: 20px 12px; }
+  .acervo-goals-page .acervo-goals-overview h2 { font-size: 29px; }
+  .acervo-goals-page .acervo-goals-overview__metric { padding: 9px 0 9px 13px; }
+  .acervo-goals-page .acervo-goals-overview__metric strong { font-size: clamp(30px,8vw,42px); }
+  .acervo-goals-page .acervo-goals-overview__metric span { font-size: 11px; }
+  .acervo-goals-page .acervo-goal-editor__intro { flex-wrap: wrap; }
+  .acervo-goals-page .acervo-goal-chip { white-space: normal; }
+  .acervo-goals-page .acervo-stat-legend { margin: 19px 0; }
+  .acervo-goals-page .acervo-month-chart__row { grid-template-columns: 30px minmax(0,1fr) 25px 28px; gap: 8px; }
+  .acervo-goals-page .acervo-month-chart__name,
+  .acervo-goals-page .acervo-month-chart__total,
+  .acervo-goals-page .acervo-month-chart__delta { font-size: 10px; }
+  .acervo-goals-page .acervo-stat-panel { padding: 18px 15px; }
+  .acervo-goals-page .acervo-goals-comparison-heading { margin-top: 28px; }
+  .acervo-goals-page .acervo-comparison-table { min-width: 360px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .acervo-goals-page .acervo-goal-card { transition: none; }
+  .acervo-goals-page .acervo-progress span { transition: none; }
+}

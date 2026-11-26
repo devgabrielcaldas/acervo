@@ -107,3 +107,6 @@ LEIA-ME*.md
 
 # Auxiliares da correcao visual da Etapa 13
 /.acervo-fix13/
+
+# Instalador auxiliar da Etapa 13 - Metas
+/.acervo-metas13/
