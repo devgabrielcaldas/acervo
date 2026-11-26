@@ -93,3 +93,11 @@ LEIA-ME*.md
 /instalar_etapa12.py
 /etapa12_payload/
 /.acervo-etapa12-backup/
+
+# Arquivos locais da instalacao da etapa 13
+/.acervo-etapa13/
+/instalar_etapa13.py
+
+# Instalador temporario do dashboard da etapa 13
+/.acervo-dashboard13/
+/instalar_dashboard13.py

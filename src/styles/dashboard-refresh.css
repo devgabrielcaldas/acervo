@@ -1,0 +1,100 @@
+/* ACERVO ETAPA 13 / DASHBOARD — aditivo, restrito a .dashboard. */
+.dashboard { --dashboard-gold: var(--accent); }
+.dashboard .page-heading { align-items: center; margin-bottom: 24px; }
+.dashboard .page-heading h1 { font-family: var(--font-editorial); font-weight: 500; font-size: clamp(29px, 3.1vw, 44px); letter-spacing: -.85px; }
+.dashboard .page-heading p { max-width: 560px; }
+.dashboard .year-pill { flex-shrink: 0; box-shadow: 0 2px 15px rgba(0,0,0,.04); }
+
+/* Destaque editorial mais expressivo; capas continuam reais e dinâmicas. */
+.dashboard .hero.hero--compact { min-height: 265px; border-radius: 22px; border: 1px solid rgba(213,173,121,.33); box-shadow: 0 14px 48px rgba(0,0,0,.14); background: radial-gradient(circle at 82% 25%, rgba(213,173,121,.17), transparent 36%), linear-gradient(111deg,#26221e,#161c20 57%,#30241e); }
+.dashboard .hero--compact .hero__content { padding: clamp(27px,3.2vw,44px); }
+.dashboard .hero--compact h2 { font-size: clamp(33px,3.05vw,47px); line-height: 1.1; letter-spacing: -1.1px; }
+.dashboard .hero--compact .hero__content > p { font-size: 13px; color: #cec6ba; }
+.dashboard .hero--compact .hero__actions { margin-top: 21px; }
+.dashboard .hero--compact .hero__actions .btn { min-height: 43px; font-size: 12px; }
+.dashboard .hero--compact .hero-live { padding-block: 20px; }
+.dashboard .hero--compact .hero-live__eyebrow { font-size: 9px; letter-spacing: 1.7px; margin-bottom: 15px; }
+.dashboard .hero--compact .hero-live__tile[href] { transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease; }
+
+/* Nova faixa de navegação: dados da coleção existente, sem chamadas adicionais. */
+.dashboard .dashboard-shortcuts { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; margin: 17px 0 4px; }
+.dashboard .dashboard-shortcut { display: flex; align-items: center; gap: 13px; min-width: 0; padding: 17px 18px; border: 1px solid var(--border); border-radius: 15px; background: var(--surface); transition: border-color .2s ease, background .2s ease, transform .2s ease; }
+.dashboard .dashboard-shortcut:hover, .dashboard .dashboard-shortcut:focus-visible { border-color: var(--accent); background: var(--surface-soft); transform: translateY(-2px); }
+.dashboard .dashboard-shortcut__icon { display: grid; place-items: center; flex: 0 0 43px; width: 43px; height: 43px; border-radius: 12px; color: var(--accent); background: var(--accent-soft); }
+.dashboard .dashboard-shortcut__copy { display: flex; flex-direction: column; min-width: 0; gap: 4px; }
+.dashboard .dashboard-shortcut__copy strong { font-size: clamp(18px,1.9vw,24px); font-weight: 750; line-height: 1.1; font-variant-numeric: tabular-nums; color: var(--text); }
+.dashboard .dashboard-shortcut__copy small { font-size: 11px; color: var(--text-muted); line-height: 1.4; }
+.dashboard .dashboard-shortcut__arrow { color: var(--accent); margin-left: auto; }
+
+/* Resumo anual — leitura rápida, detalhes secundários discretos. */
+.dashboard .hero--compact + .dashboard-shortcuts + .section-heading { margin-top: 31px; }
+.dashboard .section-heading { margin-bottom: 17px; }
+.dashboard .stats-grid { gap: 13px; }
+.dashboard .stat-card { position: relative; min-height: 170px; padding: 22px 23px; border-radius: 17px; overflow: hidden; background: linear-gradient(145deg,var(--surface),var(--surface-soft)); }
+.dashboard .stat-card::before { content: ''; position: absolute; width: 3px; top: 22px; bottom: 22px; left: 0; border-radius: 0 3px 3px 0; background: var(--accent); opacity: .7; }
+.dashboard .stat-card__value { margin: 14px 0 10px; font-size: clamp(34px,3.6vw,48px); font-weight: 650; color: var(--text); font-variant-numeric: tabular-nums; }
+.dashboard .stat-card__detail { line-height: 1.55; }
+.dashboard .stat-card__icon { width: 39px; height: 39px; }
+
+/* Listas recentes valorizam as miniaturas sem alterar os links ou a ação de progresso. */
+.dashboard .dashboard-columns { margin-top: 20px; gap: 14px; }
+.dashboard .dashboard-columns .panel { border-radius: 17px; }
+.dashboard .dashboard-columns .panel__header { padding: 22px 22px 18px; }
+.dashboard .dashboard-mini-list { padding: 9px 17px 13px; }
+.dashboard .dashboard-mini-list a { gap: 13px; padding: 11px 5px; }
+.dashboard .dashboard-mini-list .media-cover { width: 45px; height: 65px; flex: 0 0 45px; border-radius: 6px; overflow: hidden; }
+.dashboard .dashboard-mini-list strong { color: var(--text); font-size: 13px; }
+.dashboard .dashboard-mini-list small { font-size: 11px; }
+.dashboard .dashboard-mini-list__quick { min-width: 42px; min-height: 42px; }
+.dashboard .dashboard-columns .empty-state { min-height: 205px; }
+.dashboard .acervo-dashboard-goals { margin-top: 20px; border-radius: 17px; }
+.dashboard .acervo-dashboard-goals__heading h2 { font-size: 19px; }
+.dashboard .acervo-dashboard-goals__item .acervo-progress { height: 7px; }
+.dashboard .closing-note { margin-top: 20px; }
+
+@media (max-width: 1100px) {
+  .dashboard .dashboard-shortcut { padding: 14px; gap: 10px; }
+  .dashboard .dashboard-shortcut__icon { flex-basis: 38px; height: 38px; }
+}
+@media (max-width: 700px) {
+  .dashboard .hero.hero--compact { min-height: 0; }
+  .dashboard .hero--compact .hero__content { padding: 25px 24px 13px; }
+  .dashboard .hero--compact h2 { font-size: clamp(30px, 6vw, 39px); }
+  .dashboard .hero--compact .hero-live { padding: 9px 15px 20px; }
+  .dashboard .dashboard-shortcuts { gap: 9px; }
+  .dashboard .dashboard-shortcut { flex-direction: column; align-items: flex-start; gap: 9px; padding: 13px; }
+  .dashboard .dashboard-shortcut__arrow { display: none; }
+  .dashboard .dashboard-shortcut__copy strong { font-size: 22px; }
+  .dashboard .stat-card { min-height: 152px; }
+}
+@media (max-width: 520px) {
+  .dashboard .page-heading { align-items: flex-start; }
+  .dashboard .page-heading h1 { font-size: clamp(29px, 8.3vw, 37px); }
+  .dashboard .hero.hero--compact { border-radius: 17px; }
+  .dashboard .hero--compact .hero__content { padding: 22px 19px 12px; }
+  .dashboard .hero--compact h2 { font-size: 31px; }
+  .dashboard .hero--compact .hero__actions .btn { min-height: 42px; }
+  .dashboard .hero--compact .hero-live { padding-bottom: 19px; }
+  .dashboard .dashboard-shortcuts { grid-template-columns: repeat(3,minmax(0,1fr)); margin-top: 12px; gap: 7px; }
+  .dashboard .dashboard-shortcut { padding: 11px 9px; border-radius: 12px; min-width: 0; }
+  .dashboard .dashboard-shortcut__icon { width: 34px; height: 34px; flex: 0 0 34px; border-radius: 10px; }
+  .dashboard .dashboard-shortcut__copy strong { font-size: 21px; }
+  .dashboard .dashboard-shortcut__copy small { font-size: 10px; overflow-wrap: anywhere; }
+  .dashboard .hero--compact + .dashboard-shortcuts + .section-heading { margin-top: 28px; }
+  .dashboard .stat-card { min-height: 0; padding: 16px 19px; }
+  .dashboard .stat-card__value { margin: 0; font-size: 29px; }
+  .dashboard .stats-grid { gap: 9px; }
+  .dashboard .dashboard-columns .panel__header { padding: 19px 18px 15px; }
+  .dashboard .dashboard-mini-list { padding: 7px 11px 11px; }
+  .dashboard .acervo-dashboard-goals { padding: 19px 16px; }
+}
+@media (max-width: 365px) {
+  .dashboard .dashboard-shortcut { padding: 9px 6px; }
+  .dashboard .dashboard-shortcut__copy small { font-size: 9px; }
+  .dashboard .dashboard-shortcut__copy strong { font-size: 19px; }
+  .dashboard .hero--compact h2 { font-size: 28px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dashboard .dashboard-shortcut, .dashboard .hero--compact .hero-live__tile[href] { transition: none; }
+  .dashboard .dashboard-shortcut:hover { transform: none; }
+}

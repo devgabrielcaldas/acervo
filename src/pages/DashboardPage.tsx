@@ -6,6 +6,7 @@ import { getMediaError } from '../hooks/useMediaLibrary';
 import '../styles/quality.css';
 import { latestCompletedMedia } from '../utils/latestCompletedMedia';
 import '../styles/dashboard-hero.css';
+import '../styles/dashboard-refresh.css'; // ACERVO_DASHBOARD_13_2026
 import { useEffect, useState } from 'react';
 import { listMedia } from '../services/mediaRepository';
 import { listAnnualGoals } from '../services/goalsRepository';
@@ -150,6 +151,24 @@ export function DashboardPage() {
           </div>
         </div>
       </section>
+
+      <nav className="dashboard-shortcuts" aria-label="Acesso rápido ao seu Acervo">
+        <Link to="/colecao" className="dashboard-shortcut">
+          <span className="dashboard-shortcut__icon"><LibraryBig size={21} aria-hidden="true" /></span>
+          <span className="dashboard-shortcut__copy"><strong>{loading || mediaError ? '—' : items.length}</strong><small>Na coleção</small></span>
+          <ArrowRight className="dashboard-shortcut__arrow" size={17} aria-hidden="true" />
+        </Link>
+        <Link to="/andamento" className="dashboard-shortcut">
+          <span className="dashboard-shortcut__icon"><Play size={21} aria-hidden="true" /></span>
+          <span className="dashboard-shortcut__copy"><strong>{loading || mediaError ? '—' : items.filter(item => item.status === 'in_progress').length}</strong><small>Em andamento</small></span>
+          <ArrowRight className="dashboard-shortcut__arrow" size={17} aria-hidden="true" />
+        </Link>
+        <Link to="/desejos" className="dashboard-shortcut">
+          <span className="dashboard-shortcut__icon"><Bookmark size={21} aria-hidden="true" /></span>
+          <span className="dashboard-shortcut__copy"><strong>{loading || mediaError ? '—' : items.filter(item => item.status === 'wishlist').length}</strong><small>Na lista de desejos</small></span>
+          <ArrowRight className="dashboard-shortcut__arrow" size={17} aria-hidden="true" />
+        </Link>
+      </nav>
 
       <div className="section-heading">
         <div>
