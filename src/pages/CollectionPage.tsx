@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import '../styles/collection-refresh.css';
 import { ArrowRight, BookOpen, BookmarkPlus, CalendarDays, Film, LayoutGrid, LibraryBig, List, Play, Plus, Search, SlidersHorizontal, Trash2, Tv, UserRound } from 'lucide-react';
 import { Link } from 'react-router';
 import { MediaCard } from '../components/media/MediaCard';
@@ -233,6 +234,18 @@ export function CollectionPage() {
         </div>
         <Link className="btn btn--primary" to="/novo"><Plus size={17} /> Novo título</Link>
       </div>
+
+      {/* ACERVO_ETAPA13_COLECAO_VISUAL_V1 — apresentação sem alterar filtros nem persistência. */}
+      <section className="acervo-collection-overview" aria-label="Panorama da coleção">
+        <div className="acervo-collection-overview__intro">
+          <span className="acervo-collection-overview__kicker">PANORAMA DA BIBLIOTECA</span>
+          <strong>Histórias que fazem parte de você.</strong>
+          <p>Seu espaço para descobrir, acompanhar e revisitar cada obra.</p>
+        </div>
+        <div className="acervo-collection-overview__metric"><strong>{loading ? '—' : items.length}</strong><span>Na coleção</span></div>
+        <div className="acervo-collection-overview__metric"><strong>{loading ? '—' : items.filter(item => item.status === 'completed').length}</strong><span>Concluídos</span></div>
+        <div className="acervo-collection-overview__metric"><strong>{loading ? '—' : items.filter(item => item.status === 'in_progress').length}</strong><span>Em andamento</span></div>
+      </section>
 
       <div className={`collection-toolbar${mobileFiltersOpen ? ' acervo-mobile-filters-open' : ''}`}>
         <div className="collection-tabs" role="group" aria-label="Filtrar por categoria">

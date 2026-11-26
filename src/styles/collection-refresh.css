@@ -1,0 +1,104 @@
+/* ACERVO — Etapa 13: coleção editorial. Estilos limitados à página da coleção. */
+.collection-page { min-width: 0; }
+.collection-page .collection-heading { margin-bottom: 20px; }
+.collection-page .collection-heading h1 { font-family: var(--font-editorial); font-weight: 500; font-size: clamp(34px, 3.2vw, 49px); letter-spacing: -1.1px; }
+.collection-page .collection-heading p { max-width: 660px; }
+
+/* Faixa editorial com indicadores reais do próprio catálogo. */
+.collection-page .acervo-collection-overview {
+  position: relative; display: grid; grid-template-columns: minmax(0,1.35fr) repeat(3,minmax(0,.62fr));
+  gap: 0; align-items: center; min-width: 0; margin-bottom: 24px; overflow: hidden;
+  border: 1px solid color-mix(in srgb,var(--accent) 27%,var(--border)); border-radius: 17px;
+  background: linear-gradient(115deg,var(--surface-soft),var(--surface) 60%);
+}
+.collection-page .acervo-collection-overview__intro { padding: 24px 27px; min-width: 0; }
+.collection-page .acervo-collection-overview__kicker { display: block; color: var(--accent); font-size: 10px; letter-spacing: 1.55px; font-weight: 800; }
+.collection-page .acervo-collection-overview__intro strong { display: block; margin: 9px 0 7px; font-family: var(--font-editorial); font-size: clamp(21px,2vw,29px); line-height: 1.18; font-weight: 500; letter-spacing: -.3px; }
+.collection-page .acervo-collection-overview__intro p { color: var(--text-muted); font-size: 12px; margin: 0; line-height: 1.65; }
+.collection-page .acervo-collection-overview__metric { min-width: 0; padding: 16px 15px; border-left: 1px solid var(--border); display: grid; gap: 7px; }
+.collection-page .acervo-collection-overview__metric strong { color: var(--text); font-size: clamp(24px,2.6vw,37px); line-height: 1.05; letter-spacing: -1.1px; font-variant-numeric: tabular-nums; }
+.collection-page .acervo-collection-overview__metric span { color: var(--text-muted); font-size: 11px; line-height: 1.35; }
+
+/* Filtros com leitura clara: categorias, pesquisa e conjunto de opções. */
+.collection-page .collection-toolbar { gap: 13px; }
+.collection-page .collection-tabs { gap: 9px; border-bottom: 0; padding-bottom: 1px; }
+.collection-page .collection-tab { padding: 11px 14px; border: 1px solid var(--border); border-radius: 11px; background: var(--surface); font-size: 12px; transition: border-color .15s ease, background .15s ease; }
+.collection-page .collection-tab::after { display: none; }
+.collection-page .collection-tab--active { background: var(--accent-soft); border-color: color-mix(in srgb,var(--accent) 50%,var(--border)); color: var(--accent-strong); }
+.collection-page .collection-tab:hover { border-color: var(--accent); }
+.collection-page .collection-tab small { background: var(--surface-soft); color: var(--text-muted); border-radius: 6px; }
+.collection-page .collection-search { border-radius: 12px; background: var(--surface); }
+.collection-page .collection-search:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+.collection-page .collection-results { padding: 4px 0 7px; margin-top: 15px; }
+.collection-page .collection-results .section-kicker { color: var(--text-muted); }
+.collection-page .collection-clear { border-radius: 9px; padding: 8px 10px; }
+.collection-page .collection-clear:hover { background: var(--accent-soft); }
+
+/* Cartões: capa maior, hierarquia tipográfica e alinhamento de informações. */
+.collection-page .media-grid { grid-template-columns: repeat(auto-fill,minmax(min(100%,190px),1fr)); gap: 23px 17px; }
+.collection-page .media-card {
+  height: 100%; display: flex; flex-direction: column; padding: 9px 9px 15px;
+  border-radius: 16px; background: var(--surface); border-color: var(--border);
+  transition: transform .16s ease,border-color .16s ease,box-shadow .16s ease;
+}
+.collection-page .media-card:hover { transform: translateY(-3px); border-color: color-mix(in srgb,var(--accent) 48%,var(--border)); box-shadow: 0 14px 30px rgba(0,0,0,.13); }
+.collection-page .media-card__cover-link { border-radius: 11px; background: var(--surface-soft); }
+.collection-page .media-card__cover-link .media-cover { border-radius: 11px; }
+.collection-page .media-card__cover-link img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.collection-page .media-card__kind { left: 10px; bottom: 10px; font-size: 9px; padding: 6px 9px; border: 1px solid rgba(255,255,255,.15); }
+.collection-page .media-card__heart { right: 10px; top: 10px; min-width: 38px; min-height: 38px; }
+.collection-page .media-card__text { flex: 1; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 14px 6px 0; }
+.collection-page .media-card__status { font-size: 10px; letter-spacing: .15px; }
+.collection-page .media-card__title { font-size: 14px; line-height: 1.4; min-height: 2.8em; font-weight: 750; overflow-wrap: anywhere; }
+.collection-page .media-card__subtitle { width: 100%; margin: -4px 0 0; color: var(--text-muted); font-size: 11px; }
+.collection-page .media-card__text .rating-stars { margin-top: auto; }
+.collection-page .media-card__text .media-progress { max-width: 100%; }
+.collection-page .acervo-collection-entry > .acervo-collection-start { border-radius: 10px; }
+
+/* Visualização lista continua disponível e recebe acabamento equivalente. */
+.collection-page .acervo-media-row { border-radius: 14px; padding: 12px 15px; transition: border-color .16s ease,background .16s ease; }
+.collection-page .acervo-media-row:hover { border-color: color-mix(in srgb,var(--accent) 38%,var(--border)); background: var(--surface-soft); }
+.collection-page .acervo-media-row__cover { border-radius: 8px; overflow: hidden; }
+.collection-page .acervo-media-row__title { font-weight: 750; overflow-wrap: anywhere; }
+.collection-page .acervo-media-row__text { min-width: 0; }
+.collection-page .acervo-season-group { border-radius: 16px; }
+
+@media (max-width: 1050px) {
+  .collection-page .acervo-collection-overview { grid-template-columns: repeat(3,minmax(0,1fr)); }
+  .collection-page .acervo-collection-overview__intro { grid-column: 1/-1; padding: 19px 21px 15px; }
+  .collection-page .acervo-collection-overview__metric { border-left: 0; border-top: 1px solid var(--border); padding: 15px 21px; }
+  .collection-page .acervo-collection-overview__metric + .acervo-collection-overview__metric { border-left: 1px solid var(--border); }
+}
+@media (max-width: 700px) {
+  .collection-page .collection-heading { margin-bottom: 12px; }
+  .collection-page .collection-heading h1 { font-family: var(--font-editorial); font-size: clamp(28px,7vw,35px); }
+  .collection-page .acervo-collection-overview { margin-bottom: 17px; border-radius: 14px; }
+  .collection-page .acervo-collection-overview__intro { padding: 16px 16px 12px; }
+  .collection-page .acervo-collection-overview__intro strong { margin: 6px 0 0; font-size: 21px; }
+  .collection-page .acervo-collection-overview__intro p { display: none; }
+  .collection-page .acervo-collection-overview__metric { padding: 12px 13px; gap: 5px; }
+  .collection-page .acervo-collection-overview__metric strong { font-size: 25px; }
+  .collection-page .acervo-collection-overview__metric span { font-size: 10px; }
+  .collection-page .collection-tabs { gap: 7px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: thin; }
+  .collection-page .collection-tab { flex: 0 0 auto; padding: 9px 11px; font-size: 11px; }
+  .collection-page .collection-tab small { display: inline; font-size: 9px; }
+  .collection-page .media-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 13px 10px; }
+  .collection-page .media-card { padding: 6px 6px 12px; border-radius: 13px; }
+  .collection-page .media-card__text { padding: 11px 5px 0; gap: 6px; }
+  .collection-page .media-card__title { font-size: 12px; min-height: 2.8em; }
+  .collection-page .media-card__subtitle { font-size: 10px; }
+  .collection-page .media-card__heart { width: 38px; height: 38px; }
+  .collection-page .acervo-media-row { padding: 10px; }
+}
+@media (max-width: 360px) {
+  .collection-page .acervo-collection-overview__intro { padding: 14px 12px 11px; }
+  .collection-page .acervo-collection-overview__metric { padding: 10px 9px; }
+  .collection-page .acervo-collection-overview__metric strong { font-size: 23px; }
+  .collection-page .acervo-collection-overview__metric span { font-size: 9px; }
+  .collection-page .collection-tab { padding: 9px 10px; }
+  .collection-page .media-grid { gap: 10px 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .collection-page .media-card, .collection-page .acervo-media-row, .collection-page .collection-tab { transition: none; }
+  .collection-page .media-card:hover { transform: none; }
+}
